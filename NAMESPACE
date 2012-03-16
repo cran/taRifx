@@ -1,0 +1,12 @@
+# Permissive namespace for taRifx
+
+# Export all names
+exportPattern(".")
+
+# Import all packages listed as Imports or Depends
+import(
+  plyr,
+  reshape
+)
+
+# Note: eventually need to import only the functions that I use in the package

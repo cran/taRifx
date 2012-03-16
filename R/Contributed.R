@@ -8,55 +8,55 @@
 
 # Sort a data frame
 sort.data.frame <- function(x, decreasing = NULL, formula, ...) {
-# Author: Kevin Wright
-# http://tolstoy.newcastle.edu.au/R/help/04/09/4300.html
-# Some ideas from Andy Liaw
-# http://tolstoy.newcastle.edu.au/R/help/04/07/1076.html
-# Use + for ascending, - for decending.
-# Sorting is left to right in the formula
-# Useage is either of the following:
-# sort.data.frame(~Block-Variety,Oats)
-# sort.data.frame(Oats,~-Variety+Block)
-
-# If dat is the formula, then switch form and dat
-  if(inherits(x,"formula")){
-    f=x
-    dat=formula
-    formula=f
-  }
-  if(formula[[1]] != "~") {
-    stop("Formula must be one-sided.")
-  }
-# Make the formula into character and remove spaces
-  formc <- as.character(formula[2])
-  formc <- gsub(" ","",formc)
-# If the first character is not + or -, add +
-  if(!is.element(substring(formc,1,1),c("+","-"))) {
-  	formc <- paste("+",formc,sep="")
-  }
-# Extract the variables from the formula
-  vars <- unlist(strsplit(formc, "[\\+\\-]"))
-  vars <- vars[vars!=""] # Remove spurious "" terms
-# Build a list of arguments to pass to "order" function
-  calllist <- list()
-  pos=1 # Position of + or -
-  for(i in 1:length(vars)){
-    varsign <- substring(formc,pos,pos)
-    pos <- pos+1+nchar(vars[i])
-    if(is.factor(x[,vars[i]])){
-      if(varsign=="-")
-        calllist[[i]] <- -rank(x[,vars[i]])
-      else
-        calllist[[i]] <- rank(x[,vars[i]])
-    }
-    else {
-      if(varsign=="-")
-        calllist[[i]] <- -x[,vars[i]]
-      else
-        calllist[[i]] <- x[,vars[i]]
-    }
-  }
-  x[do.call("order",calllist),]
+	# Author: Kevin Wright
+	# http://tolstoy.newcastle.edu.au/R/help/04/09/4300.html
+	# Some ideas from Andy Liaw
+	# http://tolstoy.newcastle.edu.au/R/help/04/07/1076.html
+	# Use + for ascending, - for decending.
+	# Sorting is left to right in the formula
+	# Useage is either of the following:
+	# sort.data.frame(~Block-Variety,Oats)
+	# sort.data.frame(Oats,~-Variety+Block)
+	
+	# If dat is the formula, then switch form and dat
+	if(inherits(x,"formula")){
+		f=x
+		dat=formula
+		formula=f
+	}
+	if(formula[[1]] != "~") {
+		stop("Formula must be one-sided.")
+	}
+	# Make the formula into character and remove spaces
+	formc <- as.character(formula[2])
+	formc <- gsub(" ","",formc)
+	# If the first character is not + or -, add +
+	if(!is.element(substring(formc,1,1),c("+","-"))) {
+		formc <- paste("+",formc,sep="")
+	}
+	# Extract the variables from the formula
+	vars <- unlist(strsplit(formc, "[\\+\\-]"))
+	vars <- vars[vars!=""] # Remove spurious "" terms
+	# Build a list of arguments to pass to "order" function
+	calllist <- list()
+	pos=1 # Position of + or -
+	for( i in seq(length(vars)) ) {
+		varsign <- substring(formc,pos,pos)
+		pos <- pos + 1 + nchar(vars[i])
+		if( is.factor( x[,vars[i]] ) ) {
+			if(varsign=="-")
+				calllist[[i]] <- -rank(x[,vars[i]])
+			else
+				calllist[[i]] <- rank(x[,vars[i]])
+		}
+		else {
+			if( varsign == "-" )
+				calllist[[i]] <- -x[,vars[i]]
+			else
+				calllist[[i]] <- x[,vars[i]]
+		}
+	  }
+	  x[do.call("order",calllist),,...]
 } 
 
 
@@ -78,6 +78,7 @@ sort.data.frame <- function(x, decreasing = NULL, formula, ...) {
 ##### extracaption - adds whatever text string you pass to the title of the table.
 
 xtablelm <- function(lm.object, titref, labname, extracaption=NULL){
+	require(xtable)
 	
 	x <- summary(lm.object)
 	
@@ -119,52 +120,51 @@ xtablelm <- function(lm.object, titref, labname, extracaption=NULL){
 
 
 
-###############################################################################
 # Function will split column-wise a data.frame, matrix or a 2D array according
 # to an INDEX (a factor) and apply a function if one supplied.
 # 
-# No simplificatoin (sensu tapply) available at this time.
+# No simplification (sensu tapply) available at this time.
 #
-# Author: Roman Luštrik, May 2nd, 2011
+# Author: Roman Lustrik, May 2nd, 2011
 ###############################################################################
 
 
 splitc <- function(X, INDEX, FUN = NULL, ...) {
-	
-	# Some initial checks
-	wc <- class(X) # recognize a class (wc = what class?)
-	
-	if (!any(wc == c("matrix", "data.frame", "list", "array"))) 
-		stop("Unrecognized class")
-	
-	FUN <- if (!is.null(FUN)) 
-		match.fun(FUN)
-	
-	# Make some preparations before proceeding
-	lvl <- as.list(levels(as.factor(INDEX))) # list of levels over which to iterate
-	out.empty <- is.null(FUN) # if NULL, raw data should be returned
-	
-	
-	# Extract columns for each level and if FUN supplied, apply a function
-	# to the subset, otherwise return raw.
-	out <- lapply(X = lvl, FUN = function(x, index, dta, fun, empty, ...) {
-
-				my.subset <- index %in% x
-				
-				if (any(wc == "matrix" | wc == "data.frame" | wc == "array")) {
-					pr <- dta[, my.subset, drop = FALSE]
-					if (length(pr) < 1) return(NULL)
-					else
-					if (empty) return(pr) else return(do.call("FUN", list(pr, ...)))
-				}
-				
-				if (wc == "list") {
-					pr <- dta[my.subset]
-					if (length(pr) < 1) return(NULL)
-					else
-					if (empty) return(pr) else return(lapply(X = pr, FUN = fun, ...))
-				}
-			}, index = INDEX, dta = X, fun = FUN, empty = out.empty, ...)
-	
-	return(out)
+  
+  # Some initial checks
+  wc <- class(X) # recognize class (JD, don't get funny ideas, wc is "what class?")
+  
+  if (!any(wc == c("matrix", "data.frame", "list", "array"))) 
+    stop("Unrecognized class")
+  
+  FUN <- if (!is.null(FUN)) 
+    match.fun(FUN)
+  
+  # Make some preparations before proceeding
+  lvl <- as.list(levels(as.factor(INDEX))) # list of levels over which to iterate
+  out.empty <- is.null(FUN) # if NULL, raw data should be returned
+  
+  
+  # Extract columns for each level and if FUN supplied, apply a function
+  # to the subset, otherwise return raw.
+  out <- lapply(X = lvl, FUN = function(x, index, dta, fun, empty, ...) {
+    
+    my.subset <- index %in% x
+    
+    if (any(wc == "matrix" | wc == "data.frame" | wc == "array")) {
+      pr <- dta[, my.subset, drop = FALSE]
+      if (length(pr) < 1) return(NULL)
+      else
+        if (empty) return(pr) else return(do.call("FUN", list(pr, ...)))
+    }
+    
+    if (wc == "list") {
+      pr <- dta[my.subset]
+      if (length(pr) < 1) return(NULL)
+      else
+        if (empty) return(pr) else return(lapply(X = pr, FUN = fun, ...))
+    }
+  }, index = INDEX, dta = X, fun = FUN, empty = out.empty, ...)
+  
+  return(out)
 }

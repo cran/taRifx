@@ -1,10 +1,6 @@
 # General functions
 
-# Load some useful libraries
-#library(xtable)
-#library(grid)
-#library(lattice)
-#library(gdata) # for interleave()
+
 
 # Takes a vector and returns a vector of equal length containing all trues (used for selecting all of a given vector)
 trues = function(vec) {
@@ -31,9 +27,7 @@ evens=function(vec) {
 
 # Round a numeric vector down to the nearest roundvec
 roundnear <- function(vec,roundvec) {
-	frac = vec/roundvec
-	retvec = vec-(frac-floor(frac))*roundvec
-	return(retvec)
+  .Deprecated("round_any","plyr","Deprecated. Gave inaccurate results and duplicated functionality already available.")
 }
 
 # Takes a dataframe and replicates the chosen observations n times
@@ -95,6 +89,7 @@ middle.group=function(vec,type="tf") {
 #   then add \usepackage{multirow} to the preamble of your LaTeX document
 #   for longtable support, add ,tabular.environment='longtable' to the print command (plus add in ,floating=FALSE), then \usepackage{longtable} to the LaTeX preamble
 latex.table.by = function(df,num.by.vars=1,...) {
+	require(xtable)
 	# first num.by.vars groups must be sorted and in descending order of priority
 	if(!is.numeric(num.by.vars) | length(num.by.vars)!=1) {
 		stop("num.by.vars must be a number")
@@ -200,6 +195,16 @@ bytable = function(datavec,indices,ops=c(quote(mean)),ops.desc=list(mean="Mean")
 	return(by.df)
 }
 
+# Convert a `by` object to a data.frame (reducing dimensionality and adding repetition as necessary)
+as.data.frame.by <- function( x, row.names=NULL, optional=FALSE, colnames=paste("IDX",seq(length(dim(x))),sep="" ), na.rm=TRUE, ... ) {
+  num.by.vars <- length(dim(x))
+	res <- melt(unclass(x))
+  if(na.rm) { res <- na.omit(res) }
+	colnames(res)[seq(num.by.vars)] <- colnames
+  if(!is.null(row.names)) { row.names(res) <- row.names }
+	res <- res[ do.call(order,res[ , seq(num.by.vars)] ) , ] # Sort the results by the by vars in the heirarchy given
+	res
+}
 
 
 # Convert a data.frame's variables to character if they are factor or ordered
@@ -215,33 +220,41 @@ remove.factors = function(df) {
 # Shift a vector over by n spots
 # wrap adds the entry at the beginning to the end
 # pad does nothing unless wrap is false, in which case it specifies whether to pad with NAs
-shift <- function(vec,n=1,wrap=TRUE,pad=FALSE) {
-	if(length(vec)<abs(n)) { 
+shift <- function(x,...) {
+	require(plyr)
+	UseMethod("shift",x)
+}
+shift.default <- function(x,n=1,wrap=TRUE,pad=FALSE,...) {
+	if(length(x)<abs(n)) { 
 		#stop("Length of vector must be greater than the magnitude of n \n") 
 	}
 	if(n==0) { 
-		return(vec) 
-	} else if(length(vec)==n) { 
+		return(x) 
+	} else if(length(x)==n) { 
 		# return empty
-		length(vec) <- 0
-		return(vec)
+		length(x) <- 0
+		return(x)
 	} else if(n>0) {
-		returnvec <- vec[seq(n+1,length(vec) )]
+		returnvec <- x[seq(n+1,length(x) )]
 		if(wrap) {
-			returnvec <- c(returnvec,vec[seq(n)])
+			returnvec <- c(returnvec,x[seq(n)])
 		} else if(pad) {
 			returnvec <- c(returnvec,rep(NA,n))
 		}
 	} else if(n<0) {
-		returnvec <- vec[seq(1,length(vec)-abs(n))]
+		returnvec <- x[seq(1,length(x)-abs(n))]
 		if(wrap) {
-			returnvec <- c( vec[seq(length(vec)-abs(n)+1,length(vec))], returnvec )
+			returnvec <- c( x[seq(length(x)-abs(n)+1,length(x))], returnvec )
 		} else if(pad) {
 			returnvec <- c( rep(NA,abs(n)), returnvec )
 		}
 		
 	}
 	return(returnvec)
+}
+shift.data.frame <- function(x,...) {
+  colwiseShift <- colwise(shift.default)
+  colwiseShift(x,...)
 }
 
 # Classify values into groups based on which numbers they're between
@@ -308,6 +321,8 @@ hist_horiz = function(formula, data,n=20) {
 
 # panel function for xyplot to create lattice plots of the empirical CDF
 panel.ecdf <- function(x,y,lines=TRUE,...) {
+	require(grid)
+	require(lattice)
 	if(length(x)!=0 & length(y) != 0) {
 		if(lines==FALSE) {
 			panel.xyplot(x,ecdf(y)(y),...)  #ecdf() returns a function which we then have to feed a vector back into to get the ecdf
@@ -321,6 +336,8 @@ panel.ecdf <- function(x,y,lines=TRUE,...) {
 
 # Panel function for densityplot to add in descriptives as text
 panel.densityplot.enhanced <- function(x,...) {
+	require(grid)
+	require(lattice)
 	if(length(x)!=0) {
 		panel.densityplot(x,...)
 		# - Add in mean and SD
@@ -336,6 +353,8 @@ panel.densityplot.enhanced <- function(x,...) {
 
 # Bar plot divided by three groupings
 compareplot <- function(formula, data.frame, show.outlines=FALSE,main="",x.label="",div.axis.major = 10,div.axis.minor = 20,log.x=FALSE,colors.plot=c("salmon","mediumblue","olivedrab","cyan","brown","darkgreen","purple"),panel="panel.tuftebox",box.width.large.scale = .4,box.width.small.scale = .25,box.show.mean=TRUE,box.show.box=FALSE,box.show.whiskers=FALSE,...) {
+	require(grid)
+	require(lattice)
 	grid.newpage()
 	# -- Initialize variables and configure -- #
 	gp1.titlesize = 9 # Size in points for the titles of group 1 variables
@@ -444,43 +463,43 @@ compareplot <- function(formula, data.frame, show.outlines=FALSE,main="",x.label
 						# Min/max line (actually goes to 1.5IQR past Q1 or Q3)
 						min.reduced = max(quantiles["25%"]-1.5*iqr,min(x.gp1gp2gp3)) # Use true min if 1.5*iqr exceeds it
 						max.reduced = min(quantiles["75%"]+1.5*iqr,max(x.gp1gp2gp3)) # Use true max if 1.5*iqr exceeds it
-						grid.lines(y=unit(c(min.reduced,quantiles["25%"]),"native"),x=loc.y,default.unit="native",gp=gpar(col=colors.plot[gp3.i])) # Min line
-						grid.lines(y=unit(c(max.reduced,quantiles["75%"]),"native"),x=loc.y,default.unit="native",gp=gpar(col=colors.plot[gp3.i])) # Max line						
+						grid.lines(y=unit(c(min.reduced,quantiles["25%"]),"native"),x=loc.y,default.units="native",gp=gpar(col=colors.plot[gp3.i])) # Min line
+						grid.lines(y=unit(c(max.reduced,quantiles["75%"]),"native"),x=loc.y,default.units="native",gp=gpar(col=colors.plot[gp3.i])) # Max line						
 						if(box.show.whiskers==TRUE) { # Draw "whiskers" on the min/max
-							grid.lines(y=unit(min.reduced,"native"),x=unit(loc.y,"native")+(c(1,-1)*box.width.tiny),default.unit="native",gp=gpar(col=colors.plot[gp3.i])) # Min whisker
-							grid.lines(y=unit(max.reduced,"native"),x=unit(loc.y,"native")+(c(1,-1)*box.width.tiny),default.unit="native",gp=gpar(col=colors.plot[gp3.i])) # Max whisker
+							grid.lines(y=unit(min.reduced,"native"),x=unit(loc.y,"native")+(c(1,-1)*box.width.tiny),default.units="native",gp=gpar(col=colors.plot[gp3.i])) # Min whisker
+							grid.lines(y=unit(max.reduced,"native"),x=unit(loc.y,"native")+(c(1,-1)*box.width.tiny),default.units="native",gp=gpar(col=colors.plot[gp3.i])) # Max whisker
 						}
 						# Q1-Q3 line, shifted just slightly
 						if(box.show.mean==FALSE) { # Only show if we're not cluttering it up with the mean/SD diamond already
 							# Vertical line
-							grid.lines(y=unit(quantiles[c("25%","75%")],"native"),x=unit(loc.y,"native")-box.width.tiny,default.unit="native",gp=gpar(col=colors.plot[gp3.i]))
+							grid.lines(y=unit(quantiles[c("25%","75%")],"native"),x=unit(loc.y,"native")-box.width.tiny,default.units="native",gp=gpar(col=colors.plot[gp3.i]))
 							if(box.show.box==TRUE) { # Show the right side of the box also, if specified
-								grid.lines(y=unit(quantiles[c("25%","75%")],"native"),x=unit(loc.y,"native")+box.width.tiny,default.unit="native",gp=gpar(col=colors.plot[gp3.i]))
-								grid.lines(y=unit(quantiles["25%"],"native"),x=unit(loc.y,"native")+(c(1,-1)*box.width.tiny),default.unit="native",gp=gpar(col=colors.plot[gp3.i]))
-								grid.lines(y=unit(quantiles["75%"],"native"),x=unit(loc.y,"native")+(c(1,-1)*box.width.tiny),default.unit="native",gp=gpar(col=colors.plot[gp3.i]))
+								grid.lines(y=unit(quantiles[c("25%","75%")],"native"),x=unit(loc.y,"native")+box.width.tiny,default.units="native",gp=gpar(col=colors.plot[gp3.i]))
+								grid.lines(y=unit(quantiles["25%"],"native"),x=unit(loc.y,"native")+(c(1,-1)*box.width.tiny),default.units="native",gp=gpar(col=colors.plot[gp3.i]))
+								grid.lines(y=unit(quantiles["75%"],"native"),x=unit(loc.y,"native")+(c(1,-1)*box.width.tiny),default.units="native",gp=gpar(col=colors.plot[gp3.i]))
 							} else {
 								# Small horizontal lines to connect it in -- draw only the one to the left half if we're not drawing the full box
-								grid.lines(y=unit(quantiles["25%"],"native"),x=unit(loc.y,"native")+(c(0,-1)*box.width.tiny),default.unit="native",gp=gpar(col=colors.plot[gp3.i]))
-								grid.lines(y=unit(quantiles["75%"],"native"),x=unit(loc.y,"native")+(c(0,-1)*box.width.tiny),default.unit="native",gp=gpar(col=colors.plot[gp3.i]))
+								grid.lines(y=unit(quantiles["25%"],"native"),x=unit(loc.y,"native")+(c(0,-1)*box.width.tiny),default.units="native",gp=gpar(col=colors.plot[gp3.i]))
+								grid.lines(y=unit(quantiles["75%"],"native"),x=unit(loc.y,"native")+(c(0,-1)*box.width.tiny),default.units="native",gp=gpar(col=colors.plot[gp3.i]))
 							}
 						}
 						# Outliers as points
 						outliers=subset(x.gp1gp2gp3,x.gp1gp2gp3<min.reduced | x.gp1gp2gp3>max.reduced )
 						if(length(outliers)>0) {
-							grid.points(y=unit(outliers,"native"),x=rep(loc.y,length(outliers)),default.unit="native",gp=gpar(col=colors.plot[gp3.i],cex=.2),pch=4 )
+							grid.points(y=unit(outliers,"native"),x=rep(loc.y,length(outliers)),default.units="native",gp=gpar(col=colors.plot[gp3.i],cex=.2),pch=4 )
 						}
 						# Quartiles 1 and 3
 						if(box.show.mean==TRUE) {
-							grid.lines(y=unit(rep(quantiles[c("25%")],2),"native"),x=c(loc.y-box.width.small,loc.y+box.width.small),default.unit="native",gp=gpar(col=colors.plot[gp3.i]))
-							grid.lines(y=unit(rep(quantiles[c("75%")],2),"native"),x=c(loc.y-box.width.small,loc.y+box.width.small),default.unit="native",gp=gpar(col=colors.plot[gp3.i]))
+							grid.lines(y=unit(rep(quantiles[c("25%")],2),"native"),x=c(loc.y-box.width.small,loc.y+box.width.small),default.units="native",gp=gpar(col=colors.plot[gp3.i]))
+							grid.lines(y=unit(rep(quantiles[c("75%")],2),"native"),x=c(loc.y-box.width.small,loc.y+box.width.small),default.units="native",gp=gpar(col=colors.plot[gp3.i]))
 						}
 						# Median
-						grid.points(y=unit(median(x.gp1gp2gp3),"native"),x=loc.y,default.unit="native",gp=gpar(col=colors.plot[gp3.i],cex=.3),pch=15)
+						grid.points(y=unit(median(x.gp1gp2gp3),"native"),x=loc.y,default.units="native",gp=gpar(col=colors.plot[gp3.i],cex=.3),pch=15)
 						# Mean (+/- SD)
 						if(box.show.mean==TRUE) {
 							meanlines.x = c(mean(x.gp1gp2gp3),mean(x.gp1gp2gp3)-sd(x.gp1gp2gp3),mean(x.gp1gp2gp3),mean(x.gp1gp2gp3)+sd(x.gp1gp2gp3),mean(x.gp1gp2gp3) ) # start at the mean on the left and loop around
 							meanlines.y = c(loc.y-box.width.large,loc.y,loc.y+box.width.large,loc.y,loc.y-box.width.large)
-							grid.lines(y=meanlines.x,x=meanlines.y,default.unit="native",gp=gpar(col=colors.plot[gp3.i]) )
+							grid.lines(y=meanlines.x,x=meanlines.y,default.units="native",gp=gpar(col=colors.plot[gp3.i]) )
 						}
 					}
 				}
@@ -502,7 +521,7 @@ compareplot <- function(formula, data.frame, show.outlines=FALSE,main="",x.label
 	x.seq=x.range[1]+(1/div.axis.major)*seq(0,div.axis.major)*x.range.magnitude
 	mat.x <- rbind(rep(.85,div.axis.major+1),rep(1,div.axis.major+1))
 	mat.y <- matrix(rep(x.seq,each=2),nrow=2)
-	grid.polyline(x=mat.x,y=mat.y,id.lengths=rep(2,div.axis.major+1),default.unit="native")
+	grid.polyline(x=mat.x,y=mat.y,id.lengths=rep(2,div.axis.major+1),default.units="native")
 	# Major axis value labels (depends on value of log.x)
 	if(log.x==FALSE) {
 		round.digits=-floor(log10(x.range.magnitude))+1
@@ -511,11 +530,11 @@ compareplot <- function(formula, data.frame, show.outlines=FALSE,main="",x.label
 		x.seq.label=10^x.seq
 		x.labels=round_sigfig(10^x.seq,1)
 	}
-	grid.text(label=as.character(x.labels),x=.8,y=x.seq,gp=gpar(fontsize=9),just=c("right","center"),default.unit="native")
+	grid.text(label=as.character(x.labels),x=.8,y=x.seq,gp=gpar(fontsize=9),just=c("right","center"),default.units="native")
 	# Minor axis tick marks
 	mat.x <- rbind(rep(.925,div.axis.minor+1),rep(1,div.axis.minor+1))
 	mat.y <- matrix(rep(x.range[1]+x.range.magnitude*(1/div.axis.minor)*seq(0,div.axis.minor),each=2),nrow=2)
-	grid.polyline(x=mat.x,y=mat.y,id.lengths=rep(2,div.axis.minor+1),default.unit="native")
+	grid.polyline(x=mat.x,y=mat.y,id.lengths=rep(2,div.axis.minor+1),default.units="native")
 	# Line on right (the axis itself)
 	grid.lines(x=c(1,1),y=c(0,1))
 	# Axis title
@@ -624,27 +643,26 @@ categorize <- function(vec,cutpoints.df,match.min=TRUE,names=TRUE) {
 
 # Add in methods to handle LME objects in xtable
 xtable.lme <- function (x, caption = NULL, label = NULL, align = NULL, digits = NULL, display = NULL, beta.names = NULL, ...) {
+	require(xtable)
 	return(xtable.summary.lme(summary(x), caption = caption, label = label, align = align, digits = digits, display = display, beta.names = beta.names))
 }
 xtable.summary.lme <- function (x, caption = NULL, label = NULL, align = NULL, digits = NULL, display = NULL, beta.names=NULL, ...) {
-		# Grab our data
-    x <- data.frame(x$tTable[,-3], check.names = FALSE)
-		# Update beta names if specified
-    if(!is.null(beta.names)) {
-    	if(length(beta.names) != nrow(x))						stop(paste("beta.names must have",nrow(x),"elements."))
-    	rownames(x) <- beta.names
-    }
-    # Set attributes and return for xtable to deal with
-    class(x) <- c("xtable", "data.frame")
-    caption(x) <- caption
-    label(x) <- label
-    align(x) <- switch(1 + is.null(align), align, c("r", "r", 
-        "r", "r", "r"))
-    digits(x) <- switch(1 + is.null(digits), digits, c(0, 4, 
-        4, 2, 4))
-    display(x) <- switch(1 + is.null(display), display, c("s", 
-        "f", "f", "f", "f"))
-    return(x)
+	require(xtable)
+	# Grab our data
+	x <- data.frame(x$tTable[,-3], check.names = FALSE)
+	# Update beta names if specified
+	if(!is.null(beta.names)) {
+		if(length(beta.names) != nrow(x))	stop(paste("beta.names must have",nrow(x),"elements."))
+		rownames(x) <- beta.names
+	}
+	# Set attributes and return for xtable to deal with
+	class(x) <- c("xtable", "data.frame")
+	caption(x) <- caption
+	label(x) <- label
+	align(x) <- switch(1 + is.null(align), align, c("r", "r", "r", "r", "r"))
+	digits(x) <- switch(1 + is.null(digits), digits, c(0, 4, 4, 2, 4))
+	display(x) <- switch(1 + is.null(display), display, c("s", "f", "f", "f", "f"))
+	return(x)
 }
 
 # xyplot panel function with rug plots on x and y axes
@@ -683,7 +701,18 @@ as.matrix.by <- function(x, ...) {
 
 # Create a vector that starts with a given number and widens out
 searchPattern <- function(center=0,length=5,interval=1) {
+	require(gdata)
 	vec.up <- seq(center+interval,center+interval*length,interval)
 	vec.down <- seq(center-interval,center-interval*length,-interval)
 	return(c(center,as.numeric(interleave(vec.up,vec.down))))
+}
+
+# Replicate elements of vectors and lists to match another vector
+rep_along <- function( x, along.with ) {
+  rep( x, times=length(along.with) )
+}
+
+# Convert a character string to numeric, dropping any irrelevant characters
+destring <- function(x,keep="0-9.") {
+  return( as.numeric(gsub(paste("[^",keep,"]+",sep=""),"",x)) )
 }

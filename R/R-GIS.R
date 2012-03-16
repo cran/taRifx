@@ -5,22 +5,7 @@
 # Version 0.9.0
 # 8/21/2007
 
-#library(fields)
-#library(maps)
-#library(geoR)
-#library(sp)
-#library(maptools)
-#library(shapefiles)
-#library(spatial)
-#library(rgdal)
-#library(mapproj)
-#library(akima)
-#library(mgcv)
-#library(lattice)
-#library(caTools)
-#library(pspline)
-#library(grid)
-#library(RODBC)
+
 
 # -*- Define functions for use by other programs -*-
 

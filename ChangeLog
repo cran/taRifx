@@ -1,0 +1,11 @@
+Change log version 1.0 to 1.0.1
+
+- Updated documentation on shift()
+- Made shift() a generic with data.frame and vector methods
+- Fixed require'd package loading
+- Added ,drop=FALSE option to sort.data.frame
+
+Change log version 1.0.1 to 1.0.2
+
+- Added destring()
+- Depricated roundnear()

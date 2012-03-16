@@ -1,5 +1,7 @@
 \name{shift}
 \alias{shift}
+\alias{shift.default}
+\alias{shift.data.frame}
 \title{
 Shifts a vector's elements left or right by N elements.
 }
@@ -7,20 +9,24 @@ Shifts a vector's elements left or right by N elements.
 Shifts a vector's elements left or right by N elements.
 }
 \usage{
-shift(vec, n = 1, wrap = TRUE, pad = FALSE)
+   \method{shift}{default}(x, n = 1, wrap = TRUE, pad = FALSE,...)
+   \method{shift}{data.frame}(x,...)
 }
 \arguments{
-  \item{vec}{
+  \item{x}{
   	  A vector to be operated on
   }
   \item{n}{
-  	  Number of rows to shift by
+  	  Number of rows to shift by (if negative, shift to right instead of left)
   }
   \item{wrap}{
   	  Whether to wrap elements or not
   }
   \item{pad}{
   	  Whether to pad with NAs or not.   pad does nothing unless wrap is false, in which case it specifies whether to pad with NAs
+  }
+  \item{\dots}{
+	Other items to pass along
   }
 }
 

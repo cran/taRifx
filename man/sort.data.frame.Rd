@@ -1,5 +1,8 @@
 \name{sort.data.frame}
 \alias{sort.data.frame}
+
+\encoding{UTF-8}
+
 \title{
 Sort a data.frame 
 }
@@ -21,7 +24,7 @@ Sort a data.frame
   	  Ignored.  Exists for compatibility with generic S3 method.
   }
   \item{\dots}{
-  	Ignored.  
+  	Used to pass ,drop=FALSE to [  
   }
 }
 \value{
@@ -31,7 +34,8 @@ Returns a sorted data.frame
 Kevin Wright, with generic compatibility by Ari B. Friedman
 }
 \note{
-Author: Kevin Wright
+Modifications by Ari Friedman and Roman LuÅ¡trik
+Original Author: Kevin Wright
 http://tolstoy.newcastle.edu.au/R/help/04/09/4300.html
 Some ideas from Andy Liaw
 http://tolstoy.newcastle.edu.au/R/help/04/07/1076.html
@@ -49,4 +53,10 @@ to use, but please tell me if that is not the case.
 \examples{
 library(datasets)
 sort.data.frame(ChickWeight,formula=~weight+Time)
+
+mydf <- data.frame(col1 = runif(10))
+rownames(mydf) <- paste("x", 1:10, sep = "")
+sort(mydf, f = ~col1) # drops a dimension
+sort(mydf, f = ~col1, drop = FALSE) # does not drop a dimension (returns a data.frame)
+
 }

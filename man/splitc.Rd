@@ -1,14 +1,14 @@
 \name{splitc}
+\alias{splitc-package}
 \alias{splitc}
 
-\encoding{UTF-8}
 
 \title{
 Split data over columns
 }
 
 \description{
-Split and run a function column-wise on \code{data.frame}, \code{matrix} and \code{array} or element-wise on a \code{list}.
+Split data column-wise on \code{data.frame}, \code{matrix} and \code{array} or element-wise on a \code{list}.
 }
 
 \usage{
@@ -23,7 +23,7 @@ A \code{data.frame}, \code{matrix}, \code{array} or a \code{list}.
 A factor of \code{length(X)} (number of columns or list elements). If not a factor, it will be coerced into one.
 }
   \item{FUN}{
-A function to be applied to individual subset of data. If not provided (\code{NULL}), raw data is returned.
+A function to be applied to individual subset of data (each factor level). If not provided (\code{NULL}), raw (split) data is returned.
 }
   \item{\dots}{
 Additional arguments to \code{FUN}.
@@ -31,21 +31,21 @@ Additional arguments to \code{FUN}.
 }
 
 \details{
-Function splits a \code{data.frame}, \code{matrix} and \code{array} column-wize according to \code{INDEX} and \code{list} is sliced according to \code{INDEX}. Output is returned as a list of the same length as the number of levels in INDEX.
+Function splits a \code{data.frame}, \code{matrix} and \code{array} column-wise according to \code{INDEX} and \code{list} is sliced according to \code{INDEX}. Output is returned as a list of the same length as the number of levels in \code{INDEX}.
 }
 \value{
 A list of the same length as there are factor levels in \code{INDEX}.
 }
- 
+
 \author{
-Roman Luštrik \email{roman.lustrik@gmail.com}
+Roman Lustrik \email{roman.lustrik@gmail.com}
 }
 \note{
 Simplification sensu \code{tapply} is not yet implemented.
 }
 
 \seealso{
-\code{\link{tapply}}, \code{\link{by}}, \code{\link{aggregate}}, \code{\link{apply}}
+\code{\link{tapply}}, \code{\link{by}}, \code{\link{aggregate}}, \code{\link{apply}}, \code{\link{split}}
 }
 \examples{
 my.list <- list(a = runif(5), b = runif(5), c = runif(5), d = runif(5), e = runif(10),
@@ -56,9 +56,11 @@ my.matrix <- as.matrix(my.df)
 ind <- factor(c(1,1,1,1, 2,3, 4,4,4,4))
 ind2 <- factor(c(1,1,1,1, 2,3, 4,4,4,4), levels = 1:5)
 
-splitc(X = my.df, INDEX = ind, FUN = mean) # applies mean to each
-splitc(X = my.matrix, INDEX = ind2) # level 5 empty because non-existent 
-splitc(X = my.list, INDEX = ind, FUN = sum)
+# applies mean to each, you must use \code{colMeans} as \code{mean} is deprecated for \code{data.frame}s
+splitc(X = my.df, INDEX = ind, FUN = colMeans)
+splitc(X = my.matrix, INDEX = ind2) # level 5 empty because not populated
+splitc(X = my.list, INDEX = ind, FUN = sum) # applied to elements INDEX-wise 
 }
-
+% Add one or more standard keywords, see file 'KEYWORDS' in the
+% R documentation directory.
 \keyword{manip}
