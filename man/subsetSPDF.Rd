@@ -1,5 +1,7 @@
 \name{subsetSPDF}
 \alias{subsetSPDF}
+\alias{subset.SpatialPolygonsDataFrame}
+\alias{subset.SpatialPointsDataFrame}
 \title{
 Subset SpatialPolygonsDataFrame or SpatialPointsDataFrame
 }
@@ -7,10 +9,12 @@ Subset SpatialPolygonsDataFrame or SpatialPointsDataFrame
 Subset SpatialPolygonsDataFrame or SpatialPointsDataFrame
 }
 \usage{
-subsetSPDF(SPDF, tf, ...)
+subsetSPDF(x, tf, ...)
+\method{subset}{SpatialPolygonsDataFrame}(x, tf, ...)
+\method{subset}{SpatialPointsDataFrame}(x, tf, ...)
 }
 \arguments{
-  \item{SPDF}{
+  \item{x}{
   	  SpatialPolygonsDataFrame or SpatialPointsDataFrame
 }
   \item{tf}{

@@ -6,7 +6,7 @@ exportPattern(".")
 # Import all packages listed as Imports or Depends
 import(
   plyr,
-  reshape
+  reshape2
 )
 
 # Note: eventually need to import only the functions that I use in the package

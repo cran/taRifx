@@ -9,3 +9,12 @@ Change log version 1.0.1 to 1.0.2
 
 - Added destring()
 - Depricated roundnear()
+
+Change log version 1.0.2 to 1.0.3
+
+- Added reshapeasy(), a wrapper to make base R's reshape syntax sane
+- Added japply() convenience function to only sapply certain columns
+- Added stack.list(), a stack method for lists of data.frames
+- Added cleanTurked(), a function to clean Amazon Mechanical Turk items
+- Added an autoplot (ggplot2) method to plot microbenchmark results
+

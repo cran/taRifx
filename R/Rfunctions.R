@@ -716,3 +716,86 @@ rep_along <- function( x, along.with ) {
 destring <- function(x,keep="0-9.") {
   return( as.numeric(gsub(paste("[^",keep,"]+",sep=""),"",x)) )
 }
+
+# reshapeasy: Version of reshape with way, way better syntax
+# Written with the help of the StackOverflow R community
+# x is a data.frame to be reshaped
+# direction is "wide" or "long"
+# vars are the names of the (stubs of) the variables to be reshaped (if omitted, defaults to everything not in id or vary)
+# id are the names of the variables that identify unique observations
+# vary is the variable that varies.  Going to wide this variable will cease to exist.  Going to long it will be created.
+# omit is a vector of characters which are to be omitted if found at the end of variable names (e.g. price_1 becomes price in long)
+# ... are options to be passed to stats::reshape
+reshapeasy <- function( data, direction, id=(sapply(data,is.factor) | sapply(data,is.character)), vary=sapply(data,is.numeric), omit=c("_","."), vars=NULL, ... ) {
+  if(direction=="wide") data <- stats::reshape( data=data, direction=direction, idvar=id, timevar=vary, ... )
+  if(direction=="long") {
+    varying <- which(!(colnames(data) %in% id))
+    data <- stats::reshape( data=data, direction=direction, idvar=id, varying=varying, timevar=vary, ... )
+  }
+  colnames(data) <- gsub( paste("[",paste(omit,collapse="",sep=""),"]$",sep=""), "", colnames(data) )
+  return(data)
+}
+
+# Judicious apply: Apply function to only the specified columns
+# Takes a data.frame and returns a data.frame with only the specified columns transformed
+japply <- function(df, sel, FUN=function(x) x, ...) {
+  df[,sel] <- sapply( df[,sel], FUN, ... )
+  df
+}
+
+# Stacks lists of data.frames (e.g. from replicate() )
+stack.list <- function( x, label=FALSE, ... ) {
+  ret <- x[[1]]
+  if(label) { ret$from <- 1 }
+  if(length(x)==1) return(ret)
+  for( i in seq(2,length(x)) ) {
+    new <- x[[i]]
+    if(label) { new$from <- i }
+    ret <- rbind(ret,new)
+  }
+  return(ret)
+}
+
+# Cleans a Mechanical Turk file in a pretty standard way
+   # post.process is a user-defined function run on the data.frame after it is cleaned
+   # drop.duplicates has three modes.  
+      # If false, no duplicates are dropped
+      # If true or character use built-in function (drop only if all (TRUE) or the listed (character) "Answer." columns identical).  
+      # Or can be a user-defined function that takes in a data.frame and returns a logical vector corresponding to whether to drop a row (TRUE) or not (FALSE).
+cleanTurked <- function( dat, drop.duplicates=TRUE , post.process=identity ) {
+  inputs <- colnames(dat)[ grep( "Input\\.", colnames(dat) ) ]
+  answers <- colnames(dat)[ grep( "Answer\\.", colnames(dat) ) ]
+  # Eliminate rejected
+  dat <- subset( dat, ! grepl("[xX]",Reject) )
+  # Deduplicate
+  if( is.logical(drop.duplicates) | is.character(drop.duplicates) ) {
+    if(is.character(drop.duplicates) || drop.duplicates ) {
+      if(is.logical(drop.duplicates)) { drop.duplicates <- answers } # if it was a logical, drop only rows where all columns were duplicates
+      all.identical.byCol <- ddply( dat[,c("HITId",answers)], .(HITId), function(x) sapply(subset(x,select=-c(HITId)), function(v) length(unique(v))==1 ) )
+      identical <- apply( all.identical.byCol[,drop.duplicates,drop=FALSE], 1, all ) # Only drop rows where all the desired columns are identical within a group
+      ident.df <- data.frame( HITId=all.identical.byCol$HITId, identical=identical )
+      dat <- ddply( merge(dat, ident.df), .(HITId), function(x) {
+        if(x$identical[1]) return(x[1,])
+        else return(x)
+      } )
+      dat <- subset(dat,select=c(-identical))
+    }
+  } else if(is.function(drop.duplicates)) { # Use the user's function
+    stop("Not yet implemented.  Please use post.process for now.\n")
+  } else { stop("drop.duplicates must be a logical or function.\n")}
+  # Eliminate all the MT-added columns
+  ret <- subset(dat, select=c(inputs,answers) )
+  colnames(ret) <- sub( "(Input|Answer)\\.", "", colnames(ret), perl=TRUE )
+  ret <- post.process(ret)
+  ret
+}
+
+# Autoplot method for microbenchmark objects: Prettier graphs for microbenchmark using ggplot2
+autoplot.microbenchmark <- function(object, ..., y_max=max(by(object$time,object$expr,uq)) * 1.05 ) {
+  uq <- function(x) { quantile(x,.75) }  
+  lq <- function(x) { quantile(x,.25) }
+  y_min <- 0
+  p <- ggplot(object,aes(x=expr,y=time)) + coord_cartesian(ylim = c( y_min , y_max )) 
+  p <- p + stat_summary(fun.y=median,fun.ymin = lq, fun.ymax = uq, aes(fill=expr))
+  return(p)
+}

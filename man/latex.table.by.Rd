@@ -25,7 +25,7 @@ A modified xtable object.
 }
 \seealso{ xtable, bytable }
 \examples{
-my.test.df <- data.frame(grp=rep(c("A","B"),10),data=runif(20))
+my.test.df <- data.frame(grp=rep(c("A","B"),each=10),data=runif(20))
 library(xtable)
 latex.table.by(my.test.df)
 #   print(latex.table.by(test.df), include.rownames = FALSE, include.colnames = TRUE, sanitize.text.function = force)

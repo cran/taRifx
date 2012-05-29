@@ -119,19 +119,25 @@ pointgrid2SpatialPolygons=function(df,type) {
 
 
 # Subset SpatialPolygonsDataFrame or SpatialPointsDataFrame
-subsetSPDF = function(SPDF,tf,...) {
-	selected_data <- subset(SPDF@data, tf)
-	if(class(SPDF)=="SpatialPolygonsDataFrame") {
-		SPDF_selected <- subset(SPDF@polygons, tf)
+subsetSPDF = function(x,tf,...) {
+	selected_data <- subset(x@data, tf)
+	if(class(x)=="SpatialPolygonsDataFrame") {
+		SPDF_selected <- subset(x@polygons, tf)
 		centroids <- getSpPPolygonsLabptSlots(as.SpatialPolygons.PolygonsList(SPDF_selected))
-		x <- centroids[,1]
-		y <- centroids[,2]
-		export <- SpatialPolygonsDataFrame(as.SpatialPolygons.PolygonsList(SPDF_selected),data=data.frame(x=x, y=y,row.names=getSpPPolygonsIDSlots(as.SpatialPolygons.PolygonsList(SPDF_selected)),selected_data),...)
+		xs <- centroids[,1]
+		ys <- centroids[,2]
+		export <- SpatialPolygonsDataFrame(as.SpatialPolygons.PolygonsList(SPDF_selected),data=data.frame(x=xs, y=ys,row.names=getSpPPolygonsIDSlots(as.SpatialPolygons.PolygonsList(SPDF_selected)),selected_data),...)
 	}
-	if(class(SPDF)=="SpatialPointsDataFrame") {
-		export <- SpatialPointsDataFrame(coordinates(SPDF)[tf,],data=selected_data,coords.nrs=SPDF@coords.nrs,proj4string=SPDF@proj4string,...)
+	if(class(x)=="SpatialPointsDataFrame") {
+		export <- SpatialPointsDataFrame(coordinates(x)[tf,],data=selected_data,coords.nrs=x@coords.nrs,proj4string=x@proj4string,...)
 	}
 	return(export)
+}
+subset.SpatialPolygonsDataFrame <- function(x,tf,...) {
+  subsetSPDF(x,tf,...)
+}
+subset.SpatialPointsDataFrame <- function(x,tf,...) {
+  subsetSPDF(x,tf,...)
 }
 
 # Get the areas stored in the polygons and return them in the dataframe slot

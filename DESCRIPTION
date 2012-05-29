@@ -2,8 +2,8 @@ Package: taRifx
 Type: Package
 Title: Collection of utility and convenience functions, and some
         interesting spatial functions
-Version: 1.0.2
-Date: 2012-03-16
+Version: 1.0.3
+Date: 2012-05-29
 Author: Ari B. Friedman
 Maintainer: Ari B. Friedman <abfriedman@gmail.com>
 Description: A collection of various utility and convenience functions,
@@ -12,9 +12,9 @@ Description: A collection of various utility and convenience functions,
 License: GPL (>= 2)
 LazyLoad: yes
 Suggests: xtable, grid, lattice, gdata, fields, maps, geoR, sp,
-        maptools, shapefiles, spatial, rgdal, mapproj, akima, mgcv,
-        lattice, caTools, pspline, grid
-Depends: plyr, reshape
-Packaged: 2012-03-22 12:11:57 UTC; ari
+        maptools, shapefiles, spatial, mapproj, akima, mgcv, lattice,
+        caTools, pspline, grid, ggplot2
+Depends: plyr, reshape2
+Packaged: 2012-05-30 21:19:48 UTC; ari
 Repository: CRAN
-Date/Publication: 2012-03-23 17:28:12
+Date/Publication: 2012-05-31 10:20:07
