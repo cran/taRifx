@@ -18,3 +18,10 @@ Change log version 1.0.2 to 1.0.3
 - Added cleanTurked(), a function to clean Amazon Mechanical Turk items
 - Added an autoplot (ggplot2) method to plot microbenchmark results
 
+Change log version 1.0.3 to 1.0.4
+
+- Tweaked display settings in autoplot.microbenchmark
+- Fixed bug in as.data.frame.by
+- Split geographical functions into separate package: taRifx.geo
+- Added write.sanitized.csv(), a function to write CSV files for persnickity or picky parsers
+- Added readdir(), to read all data files in a directory

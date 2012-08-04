@@ -6,7 +6,42 @@
 ##################################################################
 
 
-# Sort a data frame
+#'Sort a data.frame
+#'
+#'Sorts a data frame by one or more variables
+#'
+#'
+#'@param x Data.frame to sort
+#'@param formula Formula by which to sort the data.frame (e.g. ~group1+group2
+#'sorts first by group1 then by group2)
+#'@param decreasing Ignored.  Exists for compatibility with generic S3 method.
+#'@param \dots Used to pass ,drop=FALSE to [
+#'@return Returns a sorted data.frame
+#'@note Modifications by Ari Friedman and Roman Lustrik Original Author: Kevin
+#'Wright http://tolstoy.newcastle.edu.au/R/help/04/09/4300.html Some ideas from
+#'Andy Liaw http://tolstoy.newcastle.edu.au/R/help/04/07/1076.html Use + for
+#'ascending, - for decending. Sorting is left to right in the formula
+#'
+#'If you are Kevin Wright, please contact me.  I have attempted to reach you by
+#'every means thinkable, to no avail.  My assumption is that this is in the
+#'public domain since you posted it for others to use, but please tell me if
+#'that is not the case.
+#'@author Kevin Wright, with generic compatibility by Ari B. Friedman
+#'@seealso \link[plyr]{arrange}
+#'@export sort.data.frame
+#'@method sort data.frame
+#'@S3method sort data.frame
+#'@examples
+#'
+#'library(datasets)
+#'sort.data.frame(ChickWeight,formula=~weight+Time)
+#'
+#'mydf <- data.frame(col1 = runif(10))
+#'rownames(mydf) <- paste("x", 1:10, sep = "")
+#'sort(mydf, f = ~col1) # drops a dimension
+#'sort(mydf, f = ~col1, drop = FALSE) # does not drop a dimension (returns a data.frame)
+#'
+#'
 sort.data.frame <- function(x, decreasing = NULL, formula, ...) {
 	# Author: Kevin Wright
 	# http://tolstoy.newcastle.edu.au/R/help/04/09/4300.html
@@ -77,6 +112,29 @@ sort.data.frame <- function(x, decreasing = NULL, formula, ...) {
 ##### labname - the label name you want for this table
 ##### extracaption - adds whatever text string you pass to the title of the table.
 
+
+
+#'Produces the output of an lm object as it appears in the R console when you
+#'type summary(lmobject)
+#'
+#'Produces the output of an lm object as it appears in the R console when you
+#'type summary(lmobject)
+#'
+#'
+#'@param lm.object the name of your linear model object that you want to make a
+#'summary table for.
+#'@param titref the label name of the equation you made in Latex to cross
+#'reference
+#'@param labname the label name you want for this table
+#'@param extracaption adds whatever text string you pass to the title of the
+#'table.
+#'@return xtable object
+#'@seealso xtable
+#'@export xtablelm
+#'@examples
+#'
+#'##
+#'
 xtablelm <- function(lm.object, titref, labname, extracaption=NULL){
 	require(xtable)
 	
@@ -129,6 +187,47 @@ xtablelm <- function(lm.object, titref, labname, extracaption=NULL){
 ###############################################################################
 
 
+
+
+#'Split data over columns
+#'
+#'Split data column-wise on \code{data.frame}, \code{matrix} and \code{array}
+#'or element-wise on a \code{list}.
+#'
+#'Function splits a \code{data.frame}, \code{matrix} and \code{array}
+#'column-wise according to \code{INDEX} and \code{list} is sliced according to
+#'\code{INDEX}. Output is returned as a list of the same length as the number
+#'of levels in \code{INDEX}.
+#'
+#'@aliases splitc-package splitc
+#'@param X A \code{data.frame}, \code{matrix}, \code{array} or a \code{list}.
+#'@param INDEX A factor of \code{length(X)} (number of columns or list
+#'elements). If not a factor, it will be coerced into one.
+#'@param FUN A function to be applied to individual subset of data (each factor
+#'level). If not provided (\code{NULL}), raw (split) data is returned.
+#'@param \dots Additional arguments to \code{FUN}.
+#'@return A list of the same length as there are factor levels in \code{INDEX}.
+#'@note Simplification sensu \code{tapply} is not yet implemented.
+#'@author Roman Lustrik \email{roman.lustrik@@gmail.com}
+#'@seealso \code{\link{tapply}}, \code{\link{by}}, \code{\link{aggregate}},
+#'\code{\link{apply}}, \code{\link{split}}
+#'@keywords manip
+#'@export splitc
+#'@examples
+#'
+#'my.list <- list(a = runif(5), b = runif(5), c = runif(5), d = runif(5), e = runif(10),
+#'		f = runif(10), g = runif(10), h = runif(10), i = runif(10), j = runif(10))
+#'my.df <- as.data.frame(my.list)
+#'my.matrix <- as.matrix(my.df)
+#'
+#'ind <- factor(c(1,1,1,1, 2,3, 4,4,4,4))
+#'ind2 <- factor(c(1,1,1,1, 2,3, 4,4,4,4), levels = 1:5)
+#'
+#'# applies mean to each, you must use \code{colMeans} as \code{mean} is deprecated for \code{data.frame}s
+#'splitc(X = my.df, INDEX = ind, FUN = colMeans)
+#'splitc(X = my.matrix, INDEX = ind2) # level 5 empty because not populated
+#'splitc(X = my.list, INDEX = ind, FUN = sum) # applied to elements INDEX-wise 
+#'
 splitc <- function(X, INDEX, FUN = NULL, ...) {
   
   # Some initial checks

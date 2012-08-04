@@ -1,36 +1,170 @@
-# General functions
+if(getRversion() >= "2.15.1") utils::globalVariables(c('expr',"HITId"))
 
-
-
-# Takes a vector and returns a vector of equal length containing all trues (used for selecting all of a given vector)
-trues = function(vec) {
-	rep(TRUE,length(vec))
+#'Return a vector of the days of the week, in order
+#'
+#'@param start.day Day of the week to begin the week with (as a text item)
+#'@return Character vector of length 7
+#'@export daysofweek
+#'@examples
+#'daysofweek("Sunday")
+#'
+daysofweek <- function(start.day="Monday") {
+  wkdays <- c('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday')
+  wkdays <- rep(wkdays,2)
+  selector <- unlist(lapply(wkdays,function(x) x==start.day)) #selects start day and one past end day
+  selector.numeric <- seq(length(wkdays))[selector]
+  selector.numeric[2] <- selector.numeric[2]-1 #Move to last day
+  return(wkdays[selector.numeric[1]:selector.numeric[2] ] )
 }
 
-# Returns the fractional part of a vector
+#' Obtain the fractional part of a numeric
+#'
+#' Takes a numeric vector and returns a vector of the numbers after the decimal
+#' place
+#'
+#' @param vec A numeric vector of any length
+#' @return A vector of the same length as the input vec containing only the decimal component.
+#' @export fpart
+#' @examples
+#' x <- runif(100)
+#' fpart(x)
 fpart = function(vec) {
 	ret = vec - as.integer(vec)
 	ret
 }
 
-# Returns odds/evens from a vector
-odds=function(vec) {
-	stopifnot(class(vec)=="integer")
-	ret = vec[fpart(vec/2)!=0]
-	ret
+
+#'Return vector of equal length containing all TRUEs
+#'
+#'Takes a vector and returns a vector of equal length containing all trues
+#'(used for selecting all of a given vector)
+#'
+#'
+#' @param vec any vector (or valid object for \code{length} )
+#' @return a vector of TRUEs of the length of the object passed to it
+#' @keywords boolean TRUE
+#' @export trues
+#' @examples
+#' x <- runif(100)
+#' trues(x)
+#'
+trues = function(vec) {
+  rep(TRUE,length(vec))
 }
+
+
+#'Shortcut functions to return the odd and even values from a vector
+#'
+#'Takes an integer vector and returns every odd or even element
+#'
+#'
+#'@aliases evens odds
+#'@param vec Integer vector
+#'@return Returns an integer vector consisting of only the odd/even elements.
+#'@export evens
+#'@export odds
+#'@examples
+#'
+#'x <- as.integer(c(6,3,4,7,8,1047482,7))
+#'evens(x)
+#'odds(x)
+#'
 evens=function(vec) {
 	stopifnot(class(vec)=="integer")
 	ret = vec[fpart(vec/2)==0]
 	ret
 }
+odds=function(vec) {
+  stopifnot(class(vec)=="integer")
+  ret = vec[fpart(vec/2)!=0]
+  ret
+}
 
-# Round a numeric vector down to the nearest roundvec
+#'Rounds a numeric vector to arbitrary values (not just decimal values as with
+#'round) or to a specified number of significant digits.
+#'
+#'Rounds a numeric vector to arbitrary values (not just decimal values as with
+#'round).  E.g. allows you to round to nearest 0.3 instead of just nearest 1 or
+#'0.1
+#'
+#'
+#'@aliases roundnear round_sigfig
+#'@param vec numeric vector
+#'@param roundvec What value to round things to (e.g. nearest 1, 10, 0.3,
+#'etc.).  Typically a single item to apply to all of vec.  If of length greater
+#'than 1, usual wrapping rules apply.
+#'@param digits Number of significant digits to round to
+#'@return Rounded numeric vector of length length(vec)
+#'@references http://en.wikipedia.org/wiki/Significant_figures
+#'@export roundnear
+#'@export round_sigfig
+#'@examples
+#'
+#'roundnear( runif(10) , .03 )
+#'
+#'@rdname rounding
 roundnear <- function(vec,roundvec) {
   .Deprecated("round_any","plyr","Deprecated. Gave inaccurate results and duplicated functionality already available.")
 }
+#'@rdname rounding
+round_sigfig <- function(vec,digits=2) {
+  #Check inputs
+  if(min(digits)<1) {
+    stop("Minimum significant figure digits is 1")
+  }
+  # Make our vector and digits the same length
+  if(length(vec)<length(digits)) {
+    stop("vec should be longer than or of equal length to digits")
+  }
+  if(length(vec)>length(digits)) {
+    digits <- rep(digits,ceiling(length(vec)/length(digits)))
+    if(length(vec)==(length(digits)-1) ) { # Handle odd ratios of length(vec)/length(digits)
+      digits <- digits[seq(length(vec))]
+    }
+  }
+  vec.rounded <- round(vec,-floor(log10(vec))+digits-1)
+  return(vec.rounded)
+}
 
-# Takes a dataframe and replicates the chosen observations n times
+
+
+#'Functions to manipulate data frames
+#'
+#'expandDF takes a dataframe and replicates the chosen observations n times
+#'
+#'splitDF takes a dataframe and splits it into a bunch of data.frames held in a
+#'list, according to one variable
+#'
+#'unsplitDF takes a list of data.frames produced by splitDF and returns them as
+#'one appended data.frame
+#'
+#'
+#'@aliases expandDF splitDF unsplitDF
+#'@param df Data.frame to be manipulated
+#'@param obs Vector to select rows of df (e.g. vector of row numbers or a
+#'boolean of length nrow(df) )
+#'@param numtimes Number of times to replicate
+#'@param splitvar Name of variable which defines groups on which df will be
+#'split
+#'@param splitdfs List of data.frames to recombine (generally created by
+#'splitDF)
+#'@return expandDF and unsplitDF return a data.frame splitDF returns a list of
+#'data.frames
+#'@export expandDF splitDF unsplitDF
+#'@examples
+#'
+#'library(datasets)
+#'# Duplicate a dataset
+#'expandDF(sleep,TRUE)
+#'# Expand the final observation
+#'expandDF(sleep,nrow(sleep),numtimes=10)
+#'# Split a data.frame by group
+#'s.df <- splitDF(sleep,'group')
+#'s.df
+#'# Reconstitute original data.frame
+#'unsplitDF(s.df)
+#'
+#'@rdname expandDF
 expandDF = function(df,obs,numtimes=1) {
 	dfnew=df
 	for(i in 1:numtimes) {
@@ -38,8 +172,7 @@ expandDF = function(df,obs,numtimes=1) {
 	}
 	return(dfnew)
 }
-
-# Takes a dataframe and splits it into a bunch of data.frames held in a list, according to one variable
+#'@rdname expandDF
 splitDF = function(df,splitvar) {
 	lvls = levels(as.factor(df[[splitvar]]))
 	splitdfs = list()
@@ -49,8 +182,7 @@ splitDF = function(df,splitvar) {
 	}
 	return(splitdfs)
 }
-
-# Takes a list of data.frames produced by splitDF and returns them as one appended data.frame
+#'@rdname expandDF
 unsplitDF = function(splitdfs) {
 	returndf <- splitdfs[[1]]
 	if(length(splitdfs) > 1) {
@@ -62,13 +194,45 @@ unsplitDF = function(splitdfs) {
 }
 
 
-# Returns whether a vector is homogenous or not
+#'Returns whether a vector is homogenous or not
+#'
+#'Returns TRUE/FALSE if every element of vector is identical/not.
+#'
+#'
+#'@param vec Vector to be compared
+#'@return TRUE if every element of a vector is identical; FALSE otherwise.
+#'@seealso See also \code{\link{all}} \code{\link{any}}
+#'@export homogenous
+#'@examples
+#'
+#'homogenous(c(rep("A",10),"A"))
+#'homogenous(c(rep("A",10),"B"))
+#'
 homogenous <- function(vec) {
 	return(sd(as.integer(as.factor(vec)))==0)
 }
 
 
-# return a vector containing the locations (or T/F for) of the middle of a group
+#'Return a vector containing the locations of the middle of every group in a
+#'vector, either as a numerical index or as a TRUE/FALSE boolean.
+#'
+#'This function uses run length encoding to determine the middle of every group
+#'of repeated values within a larger vector.
+#'
+#'@param vec Any vector which you want to know the middle of.
+#'@param type Either "tf" to return a boolean or "loc" to return a set of
+#'numerical locations.
+#'@return If type=="tf": Boolean of length length(vec) containing TRUE if the
+#'middle of a grouping and FALSE if not.  If type=="loc": Vector of length
+#'equal to the number of groups in vec, containing locations of the group
+#'centers.  Ties (for groups of even length) are broken by rounding up.
+#'@export middle.group
+#'@examples
+#'
+#'test <- c(1,2,2,2,2,2,2,2,2,2,1)
+#'middle.group(test)
+#'middle.group(test,type="loc")
+#'
 middle.group=function(vec,type="tf") {
 	# type is either "tf" for a T/F vector or "loc" for a locations numeric vector
 
@@ -88,6 +252,31 @@ middle.group=function(vec,type="tf") {
 #   print(latex.table.by(test.df), include.rownames = FALSE, include.colnames = TRUE, sanitize.text.function = force)
 #   then add \usepackage{multirow} to the preamble of your LaTeX document
 #   for longtable support, add ,tabular.environment='longtable' to the print command (plus add in ,floating=FALSE), then \usepackage{longtable} to the LaTeX preamble
+
+
+#'Exports a latex table with the first N columns being multirow grouping
+#'variables.
+#'
+#'Given a data.frame with the first N columns of grouping variables, makes each
+#'group print nicely in a LaTeX table.
+#'
+#'
+#'@param df data.frame with first num.by.vars columns being grouping variables
+#'@param num.by.vars Number of columns to interpret as grouping vars
+#'@param \dots Other arguments to pass to xtable
+#'@return A modified xtable object.
+#'@seealso xtable, bytable
+#'@export latex.table.by
+#'@examples
+#'
+#'my.test.df <- data.frame(grp=rep(c("A","B"),each=10),data=runif(20))
+#'library(xtable)
+#'latex.table.by(my.test.df)
+#'#   print(latex.table.by(test.df), include.rownames = FALSE, include.colnames = TRUE, sanitize.text.function = force)
+#'#   then add \usepackage{multirow} to the preamble of your LaTeX document
+#'#   for longtable support, add ,tabular.environment='longtable' to the print command (plus add in ,floating=FALSE), then \usepackage{longtable} to the LaTeX preamble
+#'
+#'
 latex.table.by = function(df,num.by.vars=1,...) {
 	require(xtable)
 	# first num.by.vars groups must be sorted and in descending order of priority
@@ -136,7 +325,42 @@ latex.table.by = function(df,num.by.vars=1,...) {
 	
 }
 
+#'Coerces a by object into a matrix (only
+#'tested on a 2d objects).
+#'@param x is a by object to convert to a matrix
+#'@param \dots ignored
+#'@return a matrix
+#'@method as.matrix by
+#'@export as.matrix.by
+as.matrix.by <- function(x,...) {
+  if(class(x)!= "by") { stop("Must input a by object") }
+  ul.x <- unlist(x)
+  by.mat <- matrix(data=ul.x,ncol=length(x),nrow=length(ul.x)/length(x) )
+  colnames(by.mat) <- names(x)
+  rownames(by.mat) <- names(x[[1]])
+  return(by.mat)
+}
 
+#'Produces a nice summary table by groupings
+#'
+#'produces a nice summary table by groupings, suitable for use with
+#'latex.table.by(). 
+#'
+#'@param datavec Vector to be analyzed
+#'@param indices Indices should be a list of grouping vectors, just like you
+#'would pass to -by-, but with sensible names for each vector
+#'@param ops Vector of quote'd operations to perform
+#'@param ops.desc Vector of length length(ops) containing the column labels for
+#'the operations.
+#'@param na.rm Remove NAs or not
+#'@param \dots other arguments to pass to by
+#'@return data.frame
+#'@seealso latex.table.by
+#'@export bytable
+#'@examples
+#'
+#'bytable(runif(100),indices=list(rep(c('a','b'),50)))
+#'
 bytable = function(datavec,indices,ops=c(quote(mean)),ops.desc=list(mean="Mean"),na.rm=TRUE) {
 	groups=as.character()
 	combinations.others=c()
@@ -195,19 +419,55 @@ bytable = function(datavec,indices,ops=c(quote(mean)),ops.desc=list(mean="Mean")
 	return(by.df)
 }
 
-# Convert a `by` object to a data.frame (reducing dimensionality and adding repetition as necessary)
+
+
+#'Convert the results of by() to a data.frame.
+#'
+#'Converts the results of by() to a data.frame if possible,  (reducing dimensionality and adding repetition as necessary)
+#'
+#'
+#'@param x The by object
+#'@param row.names Names of the rows.  If NULL, function tries guessing them
+#'@param optional Ignored.
+#'@param colnames Names of columns
+#'@param na.rm Remove NAs or not.
+#'@param \dots Pass-alongs.
+#'@return A data.frame.
+#'@export as.data.frame.by
+#'@examples
+#'
+#'	test.by <- by( ChickWeight$weight, ChickWeight$Diet, mean)
+#'	test.by
+#'	class(test.by)
+#'	str(test.by)
+#'	test.df <-as.data.frame(test.by)
+#'	str(test.df)
+#'
+#' @method as.data.frame by
+#' @S3method as.data.frame by
 as.data.frame.by <- function( x, row.names=NULL, optional=FALSE, colnames=paste("IDX",seq(length(dim(x))),sep="" ), na.rm=TRUE, ... ) {
   num.by.vars <- length(dim(x))
 	res <- melt(unclass(x))
   if(na.rm) { res <- na.omit(res) }
 	colnames(res)[seq(num.by.vars)] <- colnames
   if(!is.null(row.names)) { row.names(res) <- row.names }
-	res <- res[ do.call(order,res[ , seq(num.by.vars)] ) , ] # Sort the results by the by vars in the heirarchy given
+	res <- res[ do.call(order,list(res[ , seq(num.by.vars)]) ) , ] # Sort the results by the by vars in the heirarchy given
 	res
 }
 
 
-# Convert a data.frame's variables to character if they are factor or ordered
+
+#'Converts all factors in a data.frame to character.
+#'
+#'
+#'@param df A data.frame
+#'@return data.frame
+#'@export remove.factors
+#'@examples
+#'
+#'my.test.df <- data.frame(grp=rep(c("A","B"),10),data=runif(20))
+#'remove.factors(my.test.df)
+#'
 remove.factors = function(df) {
 	for(varnum in 1:length(df)) {
 		if("factor" %in% class(df[,varnum])) {
@@ -217,13 +477,33 @@ remove.factors = function(df) {
 	return(df)
 }
 
-# Shift a vector over by n spots
-# wrap adds the entry at the beginning to the end
-# pad does nothing unless wrap is false, in which case it specifies whether to pad with NAs
+
+#'Shifts a vector's elements left or right by N elements.
+#'
+#'
+#'@aliases shift shift.default shift.data.frame
+#'@param x A vector to be operated on
+#'@param n Number of rows to shift by (if negative, shift to right instead of
+#'left)
+#'@param wrap Whether to wrap elements or not (adds the entry at the beginning to the end)
+#'@param pad Whether to pad with NAs or not.  pad does nothing unless wrap is
+#'false, in which case it specifies whether to pad with NAs
+#'@param \dots Other items to pass along
+#'@return vector of the same type as vec
+#'@export shift shift.default shift.data.frame
+#'@examples
+#'
+#'test <- seq(10)
+#'shift(test)
+#'
+#'@rdname shift
 shift <- function(x,...) {
 	require(plyr)
 	UseMethod("shift",x)
 }
+#'@method shift default
+#'@S3method shift default
+#'@rdname shift
 shift.default <- function(x,n=1,wrap=TRUE,pad=FALSE,...) {
 	if(length(x)<abs(n)) { 
 		#stop("Length of vector must be greater than the magnitude of n \n") 
@@ -252,12 +532,36 @@ shift.default <- function(x,n=1,wrap=TRUE,pad=FALSE,...) {
 	}
 	return(returnvec)
 }
+#'@method shift data.frame
+#'@S3method shift data.frame
+#'@rdname shift
 shift.data.frame <- function(x,...) {
   colwiseShift <- colwise(shift.default)
   colwiseShift(x,...)
 }
 
-# Classify values into groups based on which numbers they're between
+#'Classify values into groups based on which numbers they're between
+#'
+#'Classify values into groups based on which numbers they're between.
+#'quantile.cutpoints creates a data.frame of quantiles for feeding into e.g.
+#'categorize()
+#'
+#'@aliases between bin quantile_cutpoints
+#'@param vec Numeric vector to classify
+#'@param cutpoints Vector listing what values the grouping should be done on.
+#'Should include the max and the min in this list as well.
+#'@param n Number of groups to bin into
+#'@param probs Probabilities at which to create cutpoints
+#'@return Vector of length(vec) indicating which group each element is in (for
+#'between). Or vector of length(vec) indicating the lower bound of the group
+#'that it's in.
+#'@seealso categorize
+#'@export between bin quantile_cutpoints
+#'@examples
+#' test <- runif(100)
+#' between(test,c(0,.1,.5,.9,1))
+#' bin(test,n=5)
+#' @rdname between
 between = function(vec,cutpoints) {
 	n <- length(cutpoints) - 1
 	cutpoints_hi <- cutpoints[seq(2,length(cutpoints))]
@@ -270,8 +574,7 @@ between = function(vec,cutpoints) {
 	
 	return(tweened)
 }
-
-# Bin values into n equally wide groups
+#' @rdname between
 bin = function(vec, n=10) {
 	cutpoints <- quantile(vec,probs=seq(0,1,1/n))
 	cutpoints_hi <- cutpoints[seq(2,length(cutpoints))]
@@ -285,9 +588,33 @@ bin = function(vec, n=10) {
 	
 	return(binned)
 }
+#' @rdname between
+quantile_cutpoints <- function(vec,probs) {
+  qtiles <- quantile(vec,probs=probs)
+  hi <- shift(qtiles,n=1,wrap=FALSE)
+  lo <- qtiles[seq(length(hi))]
+  deciles <- data.frame(low=lo,high=hi)
+  rownames(deciles) <- paste(names(lo),names(hi),sep="-")
+  return(deciles)
+}
 
 
-# Kludgy horizontal histogram function (really should just fix the lattice equivalent)
+#'Kludgy horizontal histogram function (really should just fix the lattice
+#'equivalent)
+#'
+#'
+#'@param formula Plot formula
+#'@param data Data.frame
+#'@param n Number of groups
+#'@return plot
+#'@seealso hist
+#'@export hist_horiz
+#'@examples
+#'
+#'library(lattice)
+#'library(datasets)
+#'hist_horiz(~ len | supp, data=ToothGrowth, n=5)
+#'
 hist_horiz = function(formula, data,n=20) {
 	# Import data from formula
 	parsed <- latticeParseFormula(formula,data=data)
@@ -319,7 +646,22 @@ hist_horiz = function(formula, data,n=20) {
 
 
 
-# panel function for xyplot to create lattice plots of the empirical CDF
+
+#'Various panel functions
+#'
+#'panel.ecdf is a panel function for xyplot to create lattice plots of the
+#'empirical CDF. panel.densityplot.enhanced is a panel function for densityplot
+#'to add in descriptives as text. panel.xyplot_rug is an xyplot panel function
+#'with rug plots on x and y axes.
+#'@aliases panel.ecdf panel.densityplot.enhanced panel.xyplot_rug
+#'@param x Numerical vector
+#'@param y Numerical vector
+#'@param lines Whether to connect the points with lines or not
+#'@param \dots Arguments to pass along to other lattice functions
+#'@param rug.color Color of rugplots
+#'@return Lattice panel object
+#'@export panel.ecdf panel.densityplot.enhanced panel.xyplot_rug
+#'@rdname panelfxns
 panel.ecdf <- function(x,y,lines=TRUE,...) {
 	require(grid)
 	require(lattice)
@@ -333,8 +675,7 @@ panel.ecdf <- function(x,y,lines=TRUE,...) {
 		}
 	}
 }
-
-# Panel function for densityplot to add in descriptives as text
+#'@rdname panelfxns
 panel.densityplot.enhanced <- function(x,...) {
 	require(grid)
 	require(lattice)
@@ -350,8 +691,55 @@ panel.densityplot.enhanced <- function(x,...) {
 		grid.text(x=text.x,y=text.y.sd,label=paste("SD:",round(sd(x),digits=1),sep=""),gp=gpar(fontsize=7))
 	}
 }
+#'@rdname panelfxns
+panel.xyplot_rug <- function(x,y,rug.color="grey",...) {
+  panel.xyplot(x,y,...)
+  grid.segments(x, unit(0, "npc"), x, unit(3, "mm"),default.units="native",gp=gpar(col=rug.color))
+  grid.segments(unit(0, "npc"),y, unit(3, "mm"),y, default.units="native",gp=gpar(col=rug.color))
+}
 
-# Bar plot divided by three groupings
+
+#'Bar plot divided by three groupings
+#'
+#'
+#'@param formula Plot formula.  Of the form: ~cts|group1*group2*group3 , where
+#'cts is the continuous data you want to make boxplots out of, and group_ are
+#'factors to group by in descending heirarchical order.
+#'@param data.frame Data.frame containing data
+#'@param show.outlines Whether to include boxes around plots or leave it open
+#'@param main Plot text
+#'@param x.label X axis label
+#'@param div.axis.major How many major axis ticks to use
+#'@param div.axis.minor How many minor axis ticks to use
+#'@param log.x Log transform the x data?
+#'@param colors.plot Plot colors
+#'@param panel Panel function to use
+#'@param box.width.large.scale %% ~~Describe \code{box.width.large.scale}
+#'here~~
+#'@param box.width.small.scale %% ~~Describe \code{box.width.small.scale}
+#'here~~
+#'@param box.show.mean %% ~~Describe \code{box.show.mean} here~~
+#'@param box.show.box %% ~~Describe \code{box.show.box} here~~
+#'@param box.show.whiskers %% ~~Describe \code{box.show.whiskers} here~~
+#'@param \dots Other arguments to pass to lattice function
+#'@return Plot
+#'@export compareplot
+#'@examples
+#'
+#'library(datasets)
+#'cw <- transform(ChickWeight, 
+#'  Time = cut(ChickWeight$Time,4)
+#'  )
+#'cw$Chick <- as.factor( sample(LETTERS[seq(3)], nrow(cw), replace=TRUE) )
+#'levels(cw$Diet) <- c("Low Fat","Hi Fat","Low Prot.","Hi Prot.")
+#'compareplot(~weight | Diet * Time * Chick, 
+#'  data.frame=cw , 
+#'  main = "Chick Weights",
+#'  box.show.mean=FALSE,
+#'  box.show.whiskers=FALSE,
+#'  box.show.box=FALSE
+#'  )
+#'
 compareplot <- function(formula, data.frame, show.outlines=FALSE,main="",x.label="",div.axis.major = 10,div.axis.minor = 20,log.x=FALSE,colors.plot=c("salmon","mediumblue","olivedrab","cyan","brown","darkgreen","purple"),panel="panel.tuftebox",box.width.large.scale = .4,box.width.small.scale = .25,box.show.mean=TRUE,box.show.box=FALSE,box.show.whiskers=FALSE,...) {
 	require(grid)
 	require(lattice)
@@ -561,44 +949,36 @@ compareplot <- function(formula, data.frame, show.outlines=FALSE,main="",x.label
 }
 
 
-# Round a vector to n significant digits
-round_sigfig <- function(vec,digits=2) {
-	#Check inputs
-	if(min(digits)<1) {
-		stop("Minimum significant figure digits is 1")
-	}
-	# Make our vector and digits the same length
-	if(length(vec)<length(digits)) {
-		stop("vec should be longer than or of equal length to digits")
-	}
-	if(length(vec)>length(digits)) {
-		digits <- rep(digits,ceiling(length(vec)/length(digits)))
-		if(length(vec)==(length(digits)-1) ) { # Handle odd ratios of length(vec)/length(digits)
-			digits <- digits[seq(length(vec))]
-		}
-	}
-	vec.rounded <- round(vec,-floor(log10(vec))+digits-1)
-	return(vec.rounded)
-}
 
-# Return a vector of the days of the week, in order
-daysofweek <- function(start.day="Monday") {
-	wkdays <- c('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday')
-	wkdays <- rep(wkdays,2)
-	selector <- unlist(lapply(wkdays,function(x) x==start.day)) #selects start day and one past end day
-	selector.numeric <- seq(length(wkdays))[selector]
-	selector.numeric[2] <- selector.numeric[2]-1 #Move to last day
-	return(wkdays[selector.numeric[1]:selector.numeric[2] ] )
-}
-
-# Insert a title page containing the given text.  Good for breaking up sections of plot PDFs.
+#'Plot a title page containing the given text.  Good for breaking up sections
+#'of plot PDFs.
+#'
+#'
+#'@param title.text Text to plot on its own page
+#'@return Plot
+#'@export title.page.new
+#'@examples
+#'title.page.new("Page break!")
+#'
 title.page.new <- function(title.text="") {
 	plot.new()
 	text(.5,.7,title.text)
 }
 
 
-# Convenience function to return the last/first element of a vector
+#'Convenience functions to return the last/first element of a vector
+#'
+#'
+#'@aliases last first
+#'@param vec Vector of any type
+#'@return Vector of length 1 of same type as vec
+#'@export last first
+#'@examples
+#'
+#'test <- seq(10)
+#'first(test)
+#'last(test)
+#'
 last <- function(vec) {
 	return(vec[length(vec)])
 }
@@ -606,17 +986,18 @@ first <- function(vec) {
 	return(vec[1])
 }
 
-# Create a data.frame of quantiles for feeding into e.g. categorize()
-quantile_cutpoints <- function(vec,probs) {
-	qtiles <- quantile(vec,probs=probs)
-	hi <- shift(qtiles,n=1,wrap=FALSE)
-	lo <- qtiles[seq(length(hi))]
-	deciles <- data.frame(low=lo,high=hi)
-	rownames(deciles) <- paste(names(lo),names(hi),sep="-")
-	return(deciles)
-}
 
-# Categorize a vector based on a data.frame with two columns, the low and high end points of each category
+#'Categorize a vector based on a data.frame with two columns, the low and high
+#'end points of each category.
+#'
+#'@param vec vector to categorize
+#'@param cutpoints.df quantile_cutpoints will create a data.frame of the proper
+#'format here
+#'@param match.min Whether to include or exclude the minimum value
+#'@param names Return names or row numbers
+#'@return Categorized values
+#'@export categorize
+#'@seealso \code{\link{quantile_cutpoints}}
 categorize <- function(vec,cutpoints.df,match.min=TRUE,names=TRUE) {
 	# Categorize a single point; used with apply below
 	cat.one <- function(x,cutpoints.df,names) {
@@ -641,7 +1022,21 @@ categorize <- function(vec,cutpoints.df,match.min=TRUE,names=TRUE) {
 	sapply(vec,cat.one,cutpoints.df=cutpoints.df,names=names)
 }
 
-# Add in methods to handle LME objects in xtable
+
+#'Add in methods to handle LME objects in xtable
+#'
+#'@aliases xtable.lme xtable.summary.lme
+#'@param x Model object
+#'@param caption Caption for table
+#'@param label See ?xtable
+#'@param align See ?xtable
+#'@param digits See ?xtable
+#'@param display See ?xtable
+#'@param beta.names See ?xtable
+#'@param \dots Arguments to pass to xtable
+#'@return xtable object
+#'@export xtable.lme xtable.summary.lme
+#'@seealso \code{\link[xtable]{xtable}}
 xtable.lme <- function (x, caption = NULL, label = NULL, align = NULL, digits = NULL, display = NULL, beta.names = NULL, ...) {
 	require(xtable)
 	return(xtable.summary.lme(summary(x), caption = caption, label = label, align = align, digits = digits, display = display, beta.names = beta.names))
@@ -665,14 +1060,17 @@ xtable.summary.lme <- function (x, caption = NULL, label = NULL, align = NULL, d
 	return(x)
 }
 
-# xyplot panel function with rug plots on x and y axes
-panel.xyplot_rug <- function(x,y,rug.color="grey",...) {
-	panel.xyplot(x,y,...)
-	grid.segments(x, unit(0, "npc"), x, unit(3, "mm"),default.units="native",gp=gpar(col=rug.color))
-	grid.segments(unit(0, "npc"),y, unit(3, "mm"),y, default.units="native",gp=gpar(col=rug.color))
-}
 
-# Returns number of distinct observations in each column of a data frame or in a vector
+#'Returns number of distinct observations in each column of a data frame or in
+#'a vector
+#'
+#'@param input data.frame or vector
+#'@param na.rm remove nas or not
+#'@return Num of distinct obs
+#'@export distinct
+#'@examples
+#' x <- sample(letters[1:3],10,replace=TRUE)
+#' #distinct(x)
 distinct <- function(input,na.rm=TRUE) {
 	if(na.rm!=TRUE) {	
 		exclude=c() 
@@ -687,19 +1085,18 @@ distinct <- function(input,na.rm=TRUE) {
 	))
 }
 
-# Convert a by object into a matrix (usage: as.matrix(by(...)) )
-	#! only tested on a 2d object
-as.matrix.by <- function(x, ...) {
-	if(class(x)!= "by") { stop("Must input a by object") }
-	ul.x <- unlist(x)
-	by.mat <- matrix(data=ul.x,ncol=length(x),nrow=length(ul.x)/length(x) )
-	colnames(by.mat) <- names(x)
-	rownames(by.mat) <- names(x[[1]])
-	
-	return(by.mat)
-}
-
-# Create a vector that starts with a given number and widens out
+#'Create a vector that starts with a given number and widens out
+#'
+#'@param center Number to center search pattern around
+#'@param length Number of elements in search pattern
+#'@param interval Distance between each element
+#'@return numeric vector
+#'@export searchPattern
+#'@examples
+#'
+#'library(gdata)
+#'searchPattern()
+#'
 searchPattern <- function(center=0,length=5,interval=1) {
 	require(gdata)
 	vec.up <- seq(center+interval,center+interval*length,interval)
@@ -707,12 +1104,35 @@ searchPattern <- function(center=0,length=5,interval=1) {
 	return(c(center,as.numeric(interleave(vec.up,vec.down))))
 }
 
-# Replicate elements of vectors and lists to match another vector
+#'Repeat a vector until it matches the length of another vector
+#'
+#'@param x Vector to be repeated
+#'@param along.with Vector whose length to match
+#'@return A vector of same type as x
+#'@export rep_along
+#'@examples
+#'
+#'	rep_along(1:4,letters)
+#'
 rep_along <- function( x, along.with ) {
   rep( x, times=length(along.with) )
 }
 
-# Convert a character string to numeric, dropping any irrelevant characters
+
+#'Convert character vector to numeric, ignoring irrelevant characters.
+#'
+#'
+#'@param x A vector to be operated on
+#'@param keep Characters to keep in, in bracket regular expression form.
+#'Typically includes 0-9 as well as the decimal separator (. in the US and , in
+#'Europe).
+#'@return vector of type numeric
+#'@export destring
+#'@examples
+#'
+#'test <- "50,762.83a"
+#'destring(test)
+#'
 destring <- function(x,keep="0-9.") {
   return( as.numeric(gsub(paste("[^",keep,"]+",sep=""),"",x)) )
 }
@@ -726,6 +1146,30 @@ destring <- function(x,keep="0-9.") {
 # vary is the variable that varies.  Going to wide this variable will cease to exist.  Going to long it will be created.
 # omit is a vector of characters which are to be omitted if found at the end of variable names (e.g. price_1 becomes price in long)
 # ... are options to be passed to stats::reshape
+
+
+#'reshapeasy: Easier reshaping from "wide" to "long" and back again
+#'
+#'reshapeasy is a wrapper around base R's reshape which allows for saner
+#'syntax. In particular, it makes it possible to reverse the operation by only
+#'specifying that the direction change (e.g. the names of the arguments are
+#'consistent between the direction of reshaping).
+#'
+#'
+#'@param data A data.frame to be reshaped
+#'@param direction "wide" or "long"
+#'@param vars he names of the (stubs of) the variables to be reshaped (if
+#'omitted, defaults to everything not in id or vary)
+#'@param id The names of the variables that identify unique observations
+#'@param vary he variable that varies.  Going to wide this variable will cease
+#'to exist.  Going to long it will be created.
+#'@param omit vector of characters which are to be omitted if found at the end
+#'of variable names (e.g. price_1 becomes price in long)
+#'@param ... Options to be passed to stats::reshape
+#'@return A data.frame
+#'@export reshapeasy
+#'@author Written with the help of the StackOverflow R community, see
+#'http://stackoverflow.com/questions/10055602/wrapping-base-r-reshape-for-ease-of-use
 reshapeasy <- function( data, direction, id=(sapply(data,is.factor) | sapply(data,is.character)), vary=sapply(data,is.numeric), omit=c("_","."), vars=NULL, ... ) {
   if(direction=="wide") data <- stats::reshape( data=data, direction=direction, idvar=id, timevar=vary, ... )
   if(direction=="long") {
@@ -738,12 +1182,32 @@ reshapeasy <- function( data, direction, id=(sapply(data,is.factor) | sapply(dat
 
 # Judicious apply: Apply function to only the specified columns
 # Takes a data.frame and returns a data.frame with only the specified columns transformed
+
+#'japply: Judiciously sapply to only selected columns
+#'
+#'japply is a wrapper around sapply that only sapplys to certain columns
+#'
+#'@param df data.frame
+#'@param sel A logical vector or vector of column numbers to select
+#'@param FUN The function to apply to selected columns
+#'@param \dots Pass-alongs to sapply
+#'@return A data.frame
+#'@export japply
 japply <- function(df, sel, FUN=function(x) x, ...) {
   df[,sel] <- sapply( df[,sel], FUN, ... )
   df
 }
 
-# Stacks lists of data.frames (e.g. from replicate() )
+#'Stack lists of data.frames
+#'
+#'Method of stack for lists of data.frames (e.g. from replicate() )
+#'
+#'@param x A list of rbindable objects (typically data.frames)
+#'@param label If false, drops labels
+#'@param \dots Ignored
+#'@return A ggplot2 plot
+#'@export stack.list
+#'@method stack list
 stack.list <- function( x, label=FALSE, ... ) {
   ret <- x[[1]]
   if(label) { ret$from <- 1 }
@@ -756,17 +1220,29 @@ stack.list <- function( x, label=FALSE, ... ) {
   return(ret)
 }
 
-# Cleans a Mechanical Turk file in a pretty standard way
-   # post.process is a user-defined function run on the data.frame after it is cleaned
-   # drop.duplicates has three modes.  
-      # If false, no duplicates are dropped
-      # If true or character use built-in function (drop only if all (TRUE) or the listed (character) "Answer." columns identical).  
-      # Or can be a user-defined function that takes in a data.frame and returns a logical vector corresponding to whether to drop a row (TRUE) or not (FALSE).
+
+#'Function to restore Mechanical Turk output to its original state (plus the
+#'added columns)
+#'
+#'Takes Amazon Mechanical Turk output, (optionally) deduplicates it, and
+#'returns the file to the state where you uploaded it, plus the additional
+#'columns derived from Turking.
+#'
+#'@param dat A data.frame
+#'@param drop.duplicates Has three modes of operation: 1. If false, no
+#'duplicates are dropped. 2. If true or character use built-in function (drop
+#'only if all (TRUE) or the listed (character) "Answer." columns identical).
+#'3. Or can be a user-defined function that takes in a data.frame and returns a
+#'logical vector corresponding to whether to drop a row (TRUE) or not (FALSE).
+#'@param post.process A user-defined function run on the data.frame after it is
+#'cleaned
+#'@return A data.frame
+#'@export cleanTurked
 cleanTurked <- function( dat, drop.duplicates=TRUE , post.process=identity ) {
   inputs <- colnames(dat)[ grep( "Input\\.", colnames(dat) ) ]
   answers <- colnames(dat)[ grep( "Answer\\.", colnames(dat) ) ]
   # Eliminate rejected
-  dat <- subset( dat, ! grepl("[xX]",Reject) )
+  dat <- dat[ ! grepl("[xX]",dat$Reject), ]
   # Deduplicate
   if( is.logical(drop.duplicates) | is.character(drop.duplicates) ) {
     if(is.character(drop.duplicates) || drop.duplicates ) {
@@ -790,12 +1266,80 @@ cleanTurked <- function( dat, drop.duplicates=TRUE , post.process=identity ) {
   ret
 }
 
-# Autoplot method for microbenchmark objects: Prettier graphs for microbenchmark using ggplot2
-autoplot.microbenchmark <- function(object, ..., y_max=max(by(object$time,object$expr,uq)) * 1.05 ) {
+#' Outputs a sanitized CSV file for fussy input systems e.g. ArcGIS and Mechanical Turk
+#' Performs three cleansing actions: converts text to latin1 encoding, eliminates funny characters in column names, and writes a CSV without the leading row.names column
+#' @param x The data.frame to clean and write
+#' @param file The filename to write to
+#' @param \dots Arguments to pass to write.csv
+#' @return NULL
+#' @export write.sanitized.csv
+write.sanitized.csv <- function( x, file="", ... ) {
+  sanitize.text <- function(x) {
+    stopifnot(is.character(x))
+    sanitize.each.element <- function(elem) {
+      ifelse(
+        Encoding(elem)=="unknown",
+        elem,
+        iconv(elem,from="UTF-8",to="latin1",sub="") #iconv(elem,from=as.character(Encoding(elem)),to="latin1",sub="")
+      )
+    }
+    x <- sapply(x, sanitize.each.element)
+    x <- gsub("[\x80-\xFF]","",x)
+    #x <- gsub("\x92","",x)
+    #x <- gsub("\xe4","e",x)
+    #x <- gsub("\xe1","e",x)
+    #x <- gsub("\xeb","b",x)
+    names(x) <- NULL
+    x
+  }
+  x <- japply( df=x, sel=sapply(x,is.factor), FUN=as.character)
+  x <- japply( df=x, sel=sapply(x,is.character), FUN=sanitize.text)
+  colnames(x) <- gsub("[^a-zA-Z0-9_]", "_", colnames(x) )
+  write.csv( x, file, row.names=FALSE, ... )
+}
+
+#' Autoplot method for microbenchmark objects: Prettier graphs for microbenchmark using ggplot2
+#'
+#' Uses ggplot2 to produce a more legible graph of microbenchmark timings
+#'
+#' @param object A microbenchmark object
+#' @param \dots Ignored
+#' @param y_max The upper limit of the y axis (defaults to 5 percent more than
+#'the maximum value)
+#' @return A ggplot2 plot
+#' @export autoplot.microbenchmark
+#' @method autoplot microbenchmark
+autoplot.microbenchmark <- function(object, ..., y_max=max(by(object$time,object[["expr"]],uq)) * 1.05 ) {
+  require(ggplot2)
   uq <- function(x) { quantile(x,.75) }  
   lq <- function(x) { quantile(x,.25) }
   y_min <- 0
   p <- ggplot(object,aes(x=expr,y=time)) + coord_cartesian(ylim = c( y_min , y_max )) 
-  p <- p + stat_summary(fun.y=median,fun.ymin = lq, fun.ymax = uq, aes(fill=expr))
+  p <- p + stat_summary(fun.y=median,fun.ymin = lq, fun.ymax = uq, aes(fill=expr)) + opts(axis.text.x=theme_text(angle=85))
   return(p)
+}
+
+#' Loads all readable files in a directory into a list, with names according to the filenames
+#' @param path is the directory path
+#' @param exclude is a regular expression. Matching filenames will be excluded
+#' @param filename.as.variable is a variable name to store the filename.  "" means it will not be stored.
+#' @param stack if true attempts to stack the resultant data.frames together into a single data.frame
+#' @return A list of data.frames or a single data.frame
+#' @export readdir
+readdir <- function(path, exclude="", filename.as.variable="filename", stack=FALSE) {
+  files <- dir(path)
+  files <- files[!grepl(exclude,files)]
+  paths <- paste0(path,"/",files)
+  
+  readfile <- function(p) {
+    ext <- substr(p,nchar(p)-2,nchar(p))
+    df <- do.call( paste0("read.",ext), list(file=p) )
+    if(filename.as.variable!="")  df[[filename.as.variable]] <- last(strsplit(p,"/")[[1]])
+    df
+  }
+  
+  ret <- lapply(paths, readfile)
+  names(ret) <- files
+  if(stack)  ret <- stack(ret)
+  ret
 }
