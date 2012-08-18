@@ -1,10 +1,12 @@
-0ecaccb7c0798d9d598aba7b9eb17322 *ChangeLog
-4b81fbae117996f7c0ae961308ff6758 *DESCRIPTION
-802cee0c74559efa5ba538dd4a848a9b *NAMESPACE
+57e71935439af4fcad97a7ad82e73c02 *ChangeLog
+d2c1102cd6bb9aba3f4604085cae1fe1 *DESCRIPTION
+0551b77b29d100a38634b16793e4f82b *NAMESPACE
 dae081f59c14dcc8c3cbd5952f4481d0 *R/Contributed.R
-bbff3f801cb2c48e979dabe9a7e3f8ff *R/Rfunctions.R
+49c611834233035bcd24540046e47fa3 *R/Rfunctions.R
 b328055cacd3ff379ef39a6489434436 *demo/00Index
 1330d6460560cff4dd3c3eaf46f03425 *demo/fortify.SpatialPolygonsDataFrame.R
+33a0a58e338572497c83ac72ef77fdb1 *inst/tests/run-all.R
+d41d8cd98f00b204e9800998ecf8427e *inst/tests/taRifx.testthat.r
 d96a10af94f9490a4a097e9ab9df4283 *man/as.data.frame.by.Rd
 b193d410ffd4342c062f6531bc67108b *man/as.matrix.by.Rd
 343cecc9cbe0943683df74cb60b052b9 *man/autoplot.microbenchmark.Rd
@@ -14,7 +16,7 @@ e0d4601bc851ddc477d2b9d626eab13a *man/bytable.Rd
 55184226b5eb71de639720467d4bc85f *man/cleanTurked.Rd
 ca383ceda114e42c4a9d5440ff8b12ce *man/compareplot.Rd
 b2eeb44c325090ffac0c41d22ecffaf2 *man/daysofweek.Rd
-965f12fcfd194704df7685a5be770b01 *man/destring.Rd
+b8c1e1db3b112fa07e6acb6edf0d07af *man/destring.Rd
 aebfeddfba12e31c155378c108c2b90e *man/distinct.Rd
 ac2a610b6d755dd5c00e3d11b43ce0e5 *man/evens.Rd
 d33c9affa2326fb69f0b62e57f9248ae *man/expandDF.Rd
@@ -24,7 +26,9 @@ fac249389725fdf23c75c1c8685fa66f *man/homogenous.Rd
 2b6f667ff715af76bccd82296190f2db *man/japply.Rd
 9eaa6d99076c6826f4127c1d70f03dda *man/last.Rd
 92b53a1a39ad5e22810c55e076ad0016 *man/latex.table.by.Rd
+123d84f4946164b4cb17b44ec648f0fc *man/merge.list.Rd
 59861225002557c7c2fcd661d251de49 *man/middle.group.Rd
+b0e1a554c974adc8c2b4e9729d917e13 *man/munch.Rd
 8726dc6f7e8819e9f39dece48c548cb4 *man/panelfxns.Rd
 603dbae270c47f670fd409c4280e9a18 *man/readdir.Rd
 0075d1c96b34494634f3397d2890e66b *man/remove.factors.Rd
@@ -35,9 +39,10 @@ f2aaee8e146334014a7d6ac165f47491 *man/reshapeasy.Rd
 742e467b7b9082d6ed12b6acff1b9ab3 *man/shift.Rd
 3d497b6322691514ce34025b7fbb4bd0 *man/sort.data.frame.Rd
 66cf8fea5f2db60388293947be420ab7 *man/splitc.Rd
-2bbba8ffe5bf27c89690d7dfd0590c30 *man/stack.list.Rd
+a475615071af04118b185e92cd710c2d *man/stack.list.Rd
 4d660871faef42264686d8198790733b *man/title.page.new.Rd
 c26eec0a39947f885017d1d5b8f934a6 *man/trues.Rd
 1ffb8d8a491014cb5b1d8170642c5289 *man/write.sanitized.csv.Rd
 5adae2973b7b338e21b0d72d94c1e43c *man/xtable.lme.Rd
 72c27c156a6bd58ff3181047534ea07c *man/xtablelm.Rd
+c2d087fa8a241662d8d17cf92b3675e3 *taRifx.Rproj

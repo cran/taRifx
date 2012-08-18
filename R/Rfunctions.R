@@ -1133,7 +1133,7 @@ rep_along <- function( x, along.with ) {
 #'test <- "50,762.83a"
 #'destring(test)
 #'
-destring <- function(x,keep="0-9.") {
+destring <- function(x,keep="0-9.-") {
   return( as.numeric(gsub(paste("[^",keep,"]+",sep=""),"",x)) )
 }
 
@@ -1205,9 +1205,13 @@ japply <- function(df, sel, FUN=function(x) x, ...) {
 #'@param x A list of rbindable objects (typically data.frames)
 #'@param label If false, drops labels
 #'@param \dots Ignored
-#'@return A ggplot2 plot
+#'@return Typically a data.frame
 #'@export stack.list
 #'@method stack list
+#'@examples
+#'dat <- replicate(10, data.frame(x=runif(2),y=rnorm(2)), simplify=FALSE)
+#'str(dat)
+#'stack(dat)
 stack.list <- function( x, label=FALSE, ... ) {
   ret <- x[[1]]
   if(label) { ret$from <- 1 }
@@ -1342,4 +1346,63 @@ readdir <- function(path, exclude="", filename.as.variable="filename", stack=FAL
   names(ret) <- files
   if(stack)  ret <- stack(ret)
   ret
+}
+
+#' Recursively delete entries containing `what` before entry pointed to by `which`
+#' @param x data vector
+#' @param wch Vector of indices to check preceding element for `what`
+#' @param what What to check for and delete if found in preceding element
+#' @return A vector of the same type as x with all the `what`'s removed if they were at the `which`-(1,2,3...) locations
+#' @export munch
+#' @examples
+#' x <- c("a","","b","","","","","c","d","","","","e","")
+#' munch( x, c(3,8,9,13) )
+munch <- function(x,wch,what="") {
+  if(length(wch)>1) {
+    i <- 1
+    repeat {
+      cat("i",i,"wch",paste(wch,collapse="~"),"\n")
+      initialLength <- length(x)
+      x <- munchOne( x=x, wch=wch[i], what=what )
+      wch <- wch - ( initialLength - length(x) )
+      i <- i + 1
+      if( i > length(wch) ) break
+    }
+  }
+  x
+}
+munchOne <- function(x,wch,what="") {
+  cat("MO",wch,"x",paste(x,collapse="*"),"\n")
+  if(x[wch-1]==what) {
+    x <- x[-(wch-1)]
+    x <- munchOne(x,wch-1)
+  }
+  return(x)
+}
+
+#' Method to merge two lists
+#' Matches names of each list element and combines any sub-elements
+#' @param x First list
+#' @param y Second list
+#' @param \dots Other arguments
+#' @export merge.list
+#' @method merge list
+#' @S3method merge list
+#' @return A list
+#' @examples
+#'x <- list( A=list(p=runif(5)), B=list(q=runif(5)) )
+#'y <- list( A=list(r=runif(5)), C=list(s=runif(5)) )
+#'merge.list(x,y)
+merge.list <- function( x, y, ... ) {
+  res <- x
+  for( nm in names(y) ) {
+    if(is.null(x[[nm]])) {
+      res[[nm]] <- y[[nm]]
+    } else {
+      for(yname in names(y[[nm]])) {
+        res[[nm]][[yname]] <- y[[nm]][[yname]]
+      }
+    }
+  }
+  res
 }
