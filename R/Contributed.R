@@ -59,7 +59,7 @@ sort.data.frame <- function(x, decreasing = NULL, formula, ...) {
 		dat=formula
 		formula=f
 	}
-	if(formula[[1]] != "~") {
+	if(sides(formula)!=1) {
 		stop("Formula must be one-sided.")
 	}
 	# Make the formula into character and remove spaces
@@ -208,7 +208,7 @@ xtablelm <- function(lm.object, titref, labname, extracaption=NULL){
 #'@param \dots Additional arguments to \code{FUN}.
 #'@return A list of the same length as there are factor levels in \code{INDEX}.
 #'@note Simplification sensu \code{tapply} is not yet implemented.
-#'@author Roman Lustrik \email{roman.lustrik@@gmail.com}
+#'@author Roman Lustrik \email{roman.lustrik@@biolitika.si}
 #'@seealso \code{\link{tapply}}, \code{\link{by}}, \code{\link{aggregate}},
 #'\code{\link{apply}}, \code{\link{split}}
 #'@keywords manip
@@ -223,7 +223,8 @@ xtablelm <- function(lm.object, titref, labname, extracaption=NULL){
 #'ind <- factor(c(1,1,1,1, 2,3, 4,4,4,4))
 #'ind2 <- factor(c(1,1,1,1, 2,3, 4,4,4,4), levels = 1:5)
 #'
-#'# applies mean to each, you must use \code{colMeans} as \code{mean} is deprecated for \code{data.frame}s
+#'# Applies mean to each, you must use \code{colMeans}, 
+#'#   as \code{mean} is deprecated for \code{data.frame}s
 #'splitc(X = my.df, INDEX = ind, FUN = colMeans)
 #'splitc(X = my.matrix, INDEX = ind2) # level 5 empty because not populated
 #'splitc(X = my.list, INDEX = ind, FUN = sum) # applied to elements INDEX-wise 

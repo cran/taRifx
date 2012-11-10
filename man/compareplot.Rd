@@ -5,7 +5,7 @@
   compareplot(formula, data.frame, show.outlines = FALSE,
     main = "", x.label = "", div.axis.major = 10,
     div.axis.minor = 20, log.x = FALSE,
-    colors.plot = c("salmon", "mediumblue", "olivedrab", "cyan", "brown", "darkgreen", "purple"),
+    colors.plot = c("salmon", "blue", "olivedrab", "cyan", "brown", "green", "purple"),
     panel = "panel.tuftebox", box.width.large.scale = 0.4,
     box.width.small.scale = 0.25, box.show.mean = TRUE,
     box.show.box = FALSE, box.show.whiskers = FALSE, ...)

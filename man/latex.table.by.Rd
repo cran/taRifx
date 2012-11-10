@@ -26,9 +26,14 @@ variables.}
 my.test.df <- data.frame(grp=rep(c("A","B"),each=10),data=runif(20))
 library(xtable)
 latex.table.by(my.test.df)
-#   print(latex.table.by(test.df), include.rownames = FALSE, include.colnames = TRUE, sanitize.text.function = force)
-#   then add \\usepackage{multirow} to the preamble of your LaTeX document
-#   for longtable support, add ,tabular.environment='longtable' to the print command (plus add in ,floating=FALSE), then \\usepackage{longtable} to the LaTeX preamble
+\dontrun{
+  print(latex.table.by(test.df), include.rownames = FALSE,
+     include.colnames = TRUE, sanitize.text.function = force)
+#   Then add \\usepackage{multirow} to the preamble of your LaTeX document
+#   For longtable support, add ,tabular.environment='longtable' to the print
+#     command (plus add in ,floating=FALSE), then \\usepackage{longtable} to
+#     the LaTeX preamble
+}
 }
 \seealso{
   xtable, bytable

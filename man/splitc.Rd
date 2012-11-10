@@ -48,13 +48,14 @@ my.matrix <- as.matrix(my.df)
 ind <- factor(c(1,1,1,1, 2,3, 4,4,4,4))
 ind2 <- factor(c(1,1,1,1, 2,3, 4,4,4,4), levels = 1:5)
 
-# applies mean to each, you must use \\code{colMeans} as \\code{mean} is deprecated for \\code{data.frame}s
+# Applies mean to each, you must use \\code{colMeans},
+#   as \\code{mean} is deprecated for \\code{data.frame}s
 splitc(X = my.df, INDEX = ind, FUN = colMeans)
 splitc(X = my.matrix, INDEX = ind2) # level 5 empty because not populated
 splitc(X = my.list, INDEX = ind, FUN = sum) # applied to elements INDEX-wise
 }
 \author{
-  Roman Lustrik \email{roman.lustrik@gmail.com}
+  Roman Lustrik \email{roman.lustrik@biolitika.si}
 }
 \seealso{
   \code{\link{tapply}}, \code{\link{by}},

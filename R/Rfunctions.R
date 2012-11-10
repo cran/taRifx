@@ -272,10 +272,14 @@ middle.group=function(vec,type="tf") {
 #'my.test.df <- data.frame(grp=rep(c("A","B"),each=10),data=runif(20))
 #'library(xtable)
 #'latex.table.by(my.test.df)
-#'#   print(latex.table.by(test.df), include.rownames = FALSE, include.colnames = TRUE, sanitize.text.function = force)
-#'#   then add \usepackage{multirow} to the preamble of your LaTeX document
-#'#   for longtable support, add ,tabular.environment='longtable' to the print command (plus add in ,floating=FALSE), then \usepackage{longtable} to the LaTeX preamble
-#'
+#'\dontrun{
+#'   print(latex.table.by(test.df), include.rownames = FALSE, 
+#'      include.colnames = TRUE, sanitize.text.function = force)
+#'#   Then add \usepackage{multirow} to the preamble of your LaTeX document
+#'#   For longtable support, add ,tabular.environment='longtable' to the print 
+#'#     command (plus add in ,floating=FALSE), then \usepackage{longtable} to 
+#'#     the LaTeX preamble
+#'}
 #'
 latex.table.by = function(df,num.by.vars=1,...) {
 	require(xtable)
@@ -434,6 +438,7 @@ bytable = function(datavec,indices,ops=c(quote(mean)),ops.desc=list(mean="Mean")
 #'@param \dots Pass-alongs.
 #'@return A data.frame.
 #'@export as.data.frame.by
+#'@import reshape2
 #'@examples
 #'
 #'	test.by <- by( ChickWeight$weight, ChickWeight$Diet, mean)
@@ -498,7 +503,6 @@ remove.factors = function(df) {
 #'
 #'@rdname shift
 shift <- function(x,...) {
-	require(plyr)
 	UseMethod("shift",x)
 }
 #'@method shift default
@@ -535,6 +539,7 @@ shift.default <- function(x,n=1,wrap=TRUE,pad=FALSE,...) {
 #'@method shift data.frame
 #'@S3method shift data.frame
 #'@rdname shift
+#'@import plyr
 shift.data.frame <- function(x,...) {
   colwiseShift <- colwise(shift.default)
   colwiseShift(x,...)
@@ -740,7 +745,7 @@ panel.xyplot_rug <- function(x,y,rug.color="grey",...) {
 #'  box.show.box=FALSE
 #'  )
 #'
-compareplot <- function(formula, data.frame, show.outlines=FALSE,main="",x.label="",div.axis.major = 10,div.axis.minor = 20,log.x=FALSE,colors.plot=c("salmon","mediumblue","olivedrab","cyan","brown","darkgreen","purple"),panel="panel.tuftebox",box.width.large.scale = .4,box.width.small.scale = .25,box.show.mean=TRUE,box.show.box=FALSE,box.show.whiskers=FALSE,...) {
+compareplot <- function(formula, data.frame, show.outlines=FALSE,main="",x.label="",div.axis.major = 10,div.axis.minor = 20,log.x=FALSE,colors.plot=c("salmon","blue","olivedrab","cyan","brown","green","purple"),panel="panel.tuftebox",box.width.large.scale = .4,box.width.small.scale = .25,box.show.mean=TRUE,box.show.box=FALSE,box.show.whiskers=FALSE,...) {
 	require(grid)
 	require(lattice)
 	grid.newpage()
@@ -813,6 +818,7 @@ compareplot <- function(formula, data.frame, show.outlines=FALSE,main="",x.label
 	y.range.scaled <- y.range + c(diff(y.range)*(1-y.scale)/2,-diff(y.range)*(1-y.scale)/2) # Scale our range in ways that avoid distortion around 0
 	
 	# - Divide into num.gp1 graph sections - #
+	makeNat <- function(x) as.numeric(convertUnit(x,"native")) # Function to convert to native scale then drop units (see Paul Murrell's issue suggestion in Github)
 	for(gp1.i in seq(num.gp1)) {
 		# - Title areas for gp1 - #
 		seekViewport("Graphs")
@@ -833,9 +839,9 @@ compareplot <- function(formula, data.frame, show.outlines=FALSE,main="",x.label
 			if(show.outlines) {grid.rect() }
 			# - graph areas for GP2 - #
 			seekViewport(paste("gp1.",gp1.i,sep=""))
-			pushViewport(viewport(layout.pos.col=gp2.i,layout.pos.row=1, name=paste("gp1.",gp1.i,"_gp2.",gp2.i,sep=""), yscale=unit(x.range,"native") ))
+			pushViewport(viewport(layout.pos.col=gp2.i,layout.pos.row=1, name=paste("gp1.",gp1.i,"_gp2.",gp2.i,sep=""), yscale=x.range ))
 			if(show.outlines) {grid.rect() }
-			#pushViewport(viewport(angle=-90,width=convertUnit(unit(1,"npc"),"npc","y","dimension","x","dimension"),height=convertUnit(unit(1,"npc"),"npc","x","dimension","y","dimension"),xscale=unit(x.range,"native"),yscale=unit(y.range.scaled,"native") ))
+			#pushViewport(viewport(angle=-90,width=convertUnit(unit(1,"npc"),"npc","y","dimension","x","dimension"),height=convertUnit(unit(1,"npc"),"npc","x","dimension","y","dimension"),xscale=x.range,yscale=y.range.scaled ))
 			for(gp3.i in seq(num.gp3)) {
 				# - Create our subsetted (GP3) data gp3.n times on the same gp2 plot viewport - #
 				x.gp1gp2gp3 <- subset(x,as.numeric(gp[[1]])==gp1.i & as.numeric(gp[[2]])==gp2.i & as.numeric(gp[[3]])==gp3.i)	
@@ -845,44 +851,44 @@ compareplot <- function(formula, data.frame, show.outlines=FALSE,main="",x.label
 						loc.y = y.range.scaled[1]+(gp3.i-.5)*(1/num.gp3)*diff(y.range.scaled) # y coordinate just shifts based on how many things we're plotting in this viewport
 						quantiles = quantile(x.gp1gp2gp3)
 						iqr = diff(quantiles[c("25%","75%")])
-						box.width.tiny = unit(1,"points")
+						box.width.tiny = makeNat(unit(1,"points"))
 						box.width.small = box.width.small.scale*(1/num.gp3)*diff(y.range.scaled)
 						box.width.large = box.width.large.scale*(1/num.gp3)*diff(y.range.scaled)
 						# Min/max line (actually goes to 1.5IQR past Q1 or Q3)
 						min.reduced = max(quantiles["25%"]-1.5*iqr,min(x.gp1gp2gp3)) # Use true min if 1.5*iqr exceeds it
 						max.reduced = min(quantiles["75%"]+1.5*iqr,max(x.gp1gp2gp3)) # Use true max if 1.5*iqr exceeds it
-						grid.lines(y=unit(c(min.reduced,quantiles["25%"]),"native"),x=loc.y,default.units="native",gp=gpar(col=colors.plot[gp3.i])) # Min line
-						grid.lines(y=unit(c(max.reduced,quantiles["75%"]),"native"),x=loc.y,default.units="native",gp=gpar(col=colors.plot[gp3.i])) # Max line						
+						grid.lines(y=c(min.reduced,quantiles["25%"]),x=loc.y,default.units="native",gp=gpar(col=colors.plot[gp3.i])) # Min line
+						grid.lines(y=c(max.reduced,quantiles["75%"]),x=loc.y,default.units="native",gp=gpar(col=colors.plot[gp3.i])) # Max line						
 						if(box.show.whiskers==TRUE) { # Draw "whiskers" on the min/max
-							grid.lines(y=unit(min.reduced,"native"),x=unit(loc.y,"native")+(c(1,-1)*box.width.tiny),default.units="native",gp=gpar(col=colors.plot[gp3.i])) # Min whisker
-							grid.lines(y=unit(max.reduced,"native"),x=unit(loc.y,"native")+(c(1,-1)*box.width.tiny),default.units="native",gp=gpar(col=colors.plot[gp3.i])) # Max whisker
+							grid.lines(y=min.reduced,x=loc.y+(c(1,-1)*box.width.tiny),default.units="native",gp=gpar(col=colors.plot[gp3.i])) # Min whisker
+							grid.lines(y=max.reduced,x=loc.y+(c(1,-1)*box.width.tiny),default.units="native",gp=gpar(col=colors.plot[gp3.i])) # Max whisker
 						}
 						# Q1-Q3 line, shifted just slightly
 						if(box.show.mean==FALSE) { # Only show if we're not cluttering it up with the mean/SD diamond already
 							# Vertical line
-							grid.lines(y=unit(quantiles[c("25%","75%")],"native"),x=unit(loc.y,"native")-box.width.tiny,default.units="native",gp=gpar(col=colors.plot[gp3.i]))
+							grid.lines(y=quantiles[c("25%","75%")],x=loc.y-(box.width.tiny),default.units="native",gp=gpar(col=colors.plot[gp3.i]))
 							if(box.show.box==TRUE) { # Show the right side of the box also, if specified
-								grid.lines(y=unit(quantiles[c("25%","75%")],"native"),x=unit(loc.y,"native")+box.width.tiny,default.units="native",gp=gpar(col=colors.plot[gp3.i]))
-								grid.lines(y=unit(quantiles["25%"],"native"),x=unit(loc.y,"native")+(c(1,-1)*box.width.tiny),default.units="native",gp=gpar(col=colors.plot[gp3.i]))
-								grid.lines(y=unit(quantiles["75%"],"native"),x=unit(loc.y,"native")+(c(1,-1)*box.width.tiny),default.units="native",gp=gpar(col=colors.plot[gp3.i]))
+								grid.lines(y=quantiles[c("25%","75%")],x=loc.y+box.width.tiny,default.units="native",gp=gpar(col=colors.plot[gp3.i]))
+								grid.lines(y=quantiles["25%"],x=loc.y+(c(1,-1)*box.width.tiny),default.units="native",gp=gpar(col=colors.plot[gp3.i]))
+								grid.lines(y=quantiles["75%"],x=loc.y+(c(1,-1)*box.width.tiny),default.units="native",gp=gpar(col=colors.plot[gp3.i]))
 							} else {
 								# Small horizontal lines to connect it in -- draw only the one to the left half if we're not drawing the full box
-								grid.lines(y=unit(quantiles["25%"],"native"),x=unit(loc.y,"native")+(c(0,-1)*box.width.tiny),default.units="native",gp=gpar(col=colors.plot[gp3.i]))
-								grid.lines(y=unit(quantiles["75%"],"native"),x=unit(loc.y,"native")+(c(0,-1)*box.width.tiny),default.units="native",gp=gpar(col=colors.plot[gp3.i]))
+								grid.lines(y=quantiles["25%"],x=loc.y+(c(0,-1)*box.width.tiny),default.units="native",gp=gpar(col=colors.plot[gp3.i]))
+								grid.lines(y=quantiles["75%"],x=loc.y+(c(0,-1)*box.width.tiny),default.units="native",gp=gpar(col=colors.plot[gp3.i]))
 							}
 						}
 						# Outliers as points
 						outliers=subset(x.gp1gp2gp3,x.gp1gp2gp3<min.reduced | x.gp1gp2gp3>max.reduced )
 						if(length(outliers)>0) {
-							grid.points(y=unit(outliers,"native"),x=rep(loc.y,length(outliers)),default.units="native",gp=gpar(col=colors.plot[gp3.i],cex=.2),pch=4 )
+							grid.points(y=outliers,x=rep(loc.y,length(outliers)),default.units="native",gp=gpar(col=colors.plot[gp3.i],cex=.2),pch=4 )
 						}
 						# Quartiles 1 and 3
 						if(box.show.mean==TRUE) {
-							grid.lines(y=unit(rep(quantiles[c("25%")],2),"native"),x=c(loc.y-box.width.small,loc.y+box.width.small),default.units="native",gp=gpar(col=colors.plot[gp3.i]))
-							grid.lines(y=unit(rep(quantiles[c("75%")],2),"native"),x=c(loc.y-box.width.small,loc.y+box.width.small),default.units="native",gp=gpar(col=colors.plot[gp3.i]))
+							grid.lines(y=rep(quantiles[c("25%")],2),x=c(loc.y-box.width.small,loc.y+box.width.small),default.units="native",gp=gpar(col=colors.plot[gp3.i]))
+							grid.lines(y=rep(quantiles[c("75%")],2),x=c(loc.y-box.width.small,loc.y+box.width.small),default.units="native",gp=gpar(col=colors.plot[gp3.i]))
 						}
 						# Median
-						grid.points(y=unit(median(x.gp1gp2gp3),"native"),x=loc.y,default.units="native",gp=gpar(col=colors.plot[gp3.i],cex=.3),pch=15)
+						grid.points(y=median(x.gp1gp2gp3),x=loc.y,default.units="native",gp=gpar(col=colors.plot[gp3.i],cex=.3),pch=15)
 						# Mean (+/- SD)
 						if(box.show.mean==TRUE) {
 							meanlines.x = c(mean(x.gp1gp2gp3),mean(x.gp1gp2gp3)-sd(x.gp1gp2gp3),mean(x.gp1gp2gp3),mean(x.gp1gp2gp3)+sd(x.gp1gp2gp3),mean(x.gp1gp2gp3) ) # start at the mean on the left and loop around
@@ -901,7 +907,7 @@ compareplot <- function(formula, data.frame, show.outlines=FALSE,main="",x.label
 
 	# - Draw in axis - #
 	seekViewport("Axis")
-	pushViewport(viewport(layout.pos.col=1,layout.pos.row=3,name="Axis.actual",yscale=unit(x.range,"native") ))
+	pushViewport(viewport(layout.pos.col=1,layout.pos.row=3,name="Axis.actual",yscale=x.range ))
 	if(show.outlines) {grid.rect()}
 	if(show.outlines) {grid.rect() }
 	# Major axis tick marks
@@ -1060,6 +1066,40 @@ xtable.summary.lme <- function (x, caption = NULL, label = NULL, align = NULL, d
 	return(x)
 }
 
+#'Add in methods to handle CrossTable objects in xtable
+#'@aliases xtable.CrossTable
+#'@param x Model object
+#'@param caption Caption for table
+#'@param label See ?xtable
+#'@param align See ?xtable
+#'@param digits See ?xtable
+#'@param display See ?xtable
+#'@param beta.names See ?xtable
+#'@param \dots Arguments to pass to xtable
+#'@return xtable object
+#'@method xtable CrossTable
+#'@export xtable.CrossTable
+#'@seealso \code{\link[xtable]{xtable}}
+xtable.CrossTable <- function ( x, caption = NULL, label = NULL, align = NULL, digits = NULL, display = NULL, beta.names = NULL, ... ) {
+  require(xtable)
+  # Grab our data
+  x <- data.frame(x$tTable[,-3], check.names = FALSE)
+  # Update beta names if specified
+  if(!is.null(beta.names)) {
+    if(length(beta.names) != nrow(x))	stop(paste("beta.names must have",nrow(x),"elements."))
+    rownames(x) <- beta.names
+  }
+  # Set attributes and return for xtable to deal with
+  class(x) <- c("xtable", "CrossTable")
+  caption(x) <- caption
+  label(x) <- label
+  align(x) <- switch(1 + is.null(align), align, c("r", "r", "r", "r", "r"))
+  digits(x) <- switch(1 + is.null(digits), digits, c(0, 4, 4, 2, 4))
+  display(x) <- switch(1 + is.null(display), display, c("s", "f", "f", "f", "f"))
+  return(x)
+}
+
+
 
 #'Returns number of distinct observations in each column of a data frame or in
 #'a vector
@@ -1198,10 +1238,33 @@ japply <- function(df, sel, FUN=function(x) x, ...) {
   df
 }
 
-#'Stack lists of data.frames
+#' Iteratively (recursively) apply a function to its own output
+#' @param X a vector of first arguments to be passed in
+#' @param FUN a function taking a changing (x) and an initial argument (init)
+#' @param init an argument to be "worked on" by FUN with parameters x[1], x[2], etc.
+#' @param \dots Arguments passed to FUN.
+#' @export iapply
+#' @return the final value, of the same type as init
+#' @examples
+#' vec <- "xy12"
+#' mylist <- list( c("x","a"), c("y","b"), c("a","f") )
+#' iapply( mylist , FUN=function(repvec,x) {
+#'   gsub(repvec[1],repvec[2],x)
+#' }, init=vec )
+iapply <- function(X, FUN, init, ...) {
+  res <- init
+  for(x in X) {
+    res <- FUN(x, res, ...)
+  }
+  res
+}
+
+#'Stack lists into data.frames
 #'
 #'Method of stack for lists of data.frames (e.g. from replicate() )
+#'Takes two types of data: 
 #'
+#'@description Takes two types of data: (1) a list of data.frames, (2) a list of vectors, which it interprets as rows of a data.frame
 #'@param x A list of rbindable objects (typically data.frames)
 #'@param label If false, drops labels
 #'@param \dots Ignored
@@ -1225,50 +1288,6 @@ stack.list <- function( x, label=FALSE, ... ) {
 }
 
 
-#'Function to restore Mechanical Turk output to its original state (plus the
-#'added columns)
-#'
-#'Takes Amazon Mechanical Turk output, (optionally) deduplicates it, and
-#'returns the file to the state where you uploaded it, plus the additional
-#'columns derived from Turking.
-#'
-#'@param dat A data.frame
-#'@param drop.duplicates Has three modes of operation: 1. If false, no
-#'duplicates are dropped. 2. If true or character use built-in function (drop
-#'only if all (TRUE) or the listed (character) "Answer." columns identical).
-#'3. Or can be a user-defined function that takes in a data.frame and returns a
-#'logical vector corresponding to whether to drop a row (TRUE) or not (FALSE).
-#'@param post.process A user-defined function run on the data.frame after it is
-#'cleaned
-#'@return A data.frame
-#'@export cleanTurked
-cleanTurked <- function( dat, drop.duplicates=TRUE , post.process=identity ) {
-  inputs <- colnames(dat)[ grep( "Input\\.", colnames(dat) ) ]
-  answers <- colnames(dat)[ grep( "Answer\\.", colnames(dat) ) ]
-  # Eliminate rejected
-  dat <- dat[ ! grepl("[xX]",dat$Reject), ]
-  # Deduplicate
-  if( is.logical(drop.duplicates) | is.character(drop.duplicates) ) {
-    if(is.character(drop.duplicates) || drop.duplicates ) {
-      if(is.logical(drop.duplicates)) { drop.duplicates <- answers } # if it was a logical, drop only rows where all columns were duplicates
-      all.identical.byCol <- ddply( dat[,c("HITId",answers)], .(HITId), function(x) sapply(subset(x,select=-c(HITId)), function(v) length(unique(v))==1 ) )
-      identical <- apply( all.identical.byCol[,drop.duplicates,drop=FALSE], 1, all ) # Only drop rows where all the desired columns are identical within a group
-      ident.df <- data.frame( HITId=all.identical.byCol$HITId, identical=identical )
-      dat <- ddply( merge(dat, ident.df), .(HITId), function(x) {
-        if(x$identical[1]) return(x[1,])
-        else return(x)
-      } )
-      dat <- subset(dat,select=c(-identical))
-    }
-  } else if(is.function(drop.duplicates)) { # Use the user's function
-    stop("Not yet implemented.  Please use post.process for now.\n")
-  } else { stop("drop.duplicates must be a logical or function.\n")}
-  # Eliminate all the MT-added columns
-  ret <- subset(dat, select=c(inputs,answers) )
-  colnames(ret) <- sub( "(Input|Answer)\\.", "", colnames(ret), perl=TRUE )
-  ret <- post.process(ret)
-  ret
-}
 
 #' Outputs a sanitized CSV file for fussy input systems e.g. ArcGIS and Mechanical Turk
 #' Performs three cleansing actions: converts text to latin1 encoding, eliminates funny characters in column names, and writes a CSV without the leading row.names column
@@ -1406,3 +1425,78 @@ merge.list <- function( x, y, ... ) {
   }
   res
 }
+
+#' Function to prettify the output of another function using a `var.labels` attribute
+#' This is particularly useful in combination with read.dta et al.
+#' @param dat A data.frame with attr `var.labels` giving descriptions of variables
+#' @param expr An expression to evaluate with pretty var.labels
+#' @export prettify
+#' @return The result of the expression, with variable names replaced with their labels
+#' @examples
+#' testDF <- data.frame( a=seq(10),b=runif(10),c=rnorm(10) )
+#' attr(testDF,"var.labels") <- c("Identifier","Important Data","Lies, Damn Lies, Statistics")
+#' prettify( testDF, quote(str(dat)) )
+prettify <- function( dat, expr ) {
+  labels <- attr(dat,"var.labels")
+  for(i in seq(ncol(dat))) colnames(dat)[i] <- labels[i]
+  attr(dat,"var.labels") <- NULL
+  eval( expr )
+}
+
+#' Convert all factors to character
+#' @param x data.frame
+#' @return data.frame
+#' @export unfactor.data.frame
+unfactor.data.frame <- function(x) {
+  japply( x, sapply(x,is.factor), as.character )
+}
+
+#' Figure out how many "sides" a formula has
+#' See also SimonO101's answer at http://stackoverflow.com/a/16376939/636656
+#' @aliases sides sides.default sides.formula
+#' @param x The object to calculate the sidedness of
+#' @param \dots Other items to pass along
+#' @return An integer of the number of sides
+#' @export sides sides.default sides.formula
+#' @rdname sides
+#' @examples
+#' test <- list( ~ a + b, a ~ b + c, b + c ~ a, ~ a ~ b, a ~ b ~ c, a~b+c|d~c~d~e~f~g )
+#' sapply(test,sides)
+sides <- function(x,...) {
+  UseMethod("sides",x)
+}
+#' @method sides default
+#' @S3method sides default
+#' @rdname sides
+sides.default <- function(x,...) {
+  stop("Only sidedness for formulas is supported currently")
+}
+#' @method sides formula
+#' @S3method sides formula
+#' @rdname sides
+sides.formula <- function(x,...) {
+  isOneSided <- function(x) attr( terms(x) , "response" ) == 0
+  if(isOneSided(x)) return(1)
+  two <- function(x) x[[2]]
+  # Recursively navigate the formula tree, keeping track of how many times it's been done
+  sds <- function(f,cnt) {
+    if(class(two(f))=="call") sds(two(f),cnt=cnt+1) else return(cnt)
+  }
+  sds(x,2)
+}
+
+
+#' Table function which lists NA entries by default
+#' This is a simple wrapper to change defaults from the base R table()
+#' @param \dots one or more objects which can be interpreted as factors (including character strings), or a list (or data frame) whose components can be so interpreted. (For as.table and as.data.frame, arguments passed to specific methods.)
+#' @param exclude levels to remove for all factors in .... If set to NULL, it implies useNA = "always". See 'Details' for its interpretation for non-factor arguments.
+#' @param useNA whether to include NA values in the table. See 'Details'.
+#' @param deparse.level controls how the default dnn is constructed. See 'Details'.
+#' @export tab
+#' @return tab() returns a contingency table, an object of class "table", an array of integer values
+#' @seealso table
+tab <- function( ..., exclude = NULL, useNA = c("no", "ifany", "always"), deparse.level = 1 ) {
+  table( ..., exclude=exclude, useNA=useNA, deparse.level=deparse.level )
+}
+
+
