@@ -18,8 +18,6 @@
   the column labels for the operations.}
 
   \item{na.rm}{Remove NAs or not}
-
-  \item{\dots}{other arguments to pass to by}
 }
 \value{
   data.frame

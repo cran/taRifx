@@ -1,5 +1,5 @@
 ef4e550b51bc5a20e903e6d54f1d71ac *ChangeLog
-fa6014902a2d8b7f5ef4bde24ad9eed4 *DESCRIPTION
+b8e75dbb0a66617a0da6e3e5279a4a2b *DESCRIPTION
 2bce53748842c5af10165f1354dfe5e3 *NAMESPACE
 c10107056e3b73209ed87af331571674 *R/Contributed.R
 be94067c31d25b77be7f986b8599724f *R/Rfunctions.R
@@ -11,7 +11,7 @@ d96a10af94f9490a4a097e9ab9df4283 *man/as.data.frame.by.Rd
 b193d410ffd4342c062f6531bc67108b *man/as.matrix.by.Rd
 343cecc9cbe0943683df74cb60b052b9 *man/autoplot.microbenchmark.Rd
 9aad7e9ba6dadd10403b305e94717320 *man/between.Rd
-e0d4601bc851ddc477d2b9d626eab13a *man/bytable.Rd
+3abb0cee4a350611323f38e6d03ad8b9 *man/bytable.Rd
 700985d987f8a80667103a126f1ea31d *man/categorize.Rd
 b25a3b2ef85433ee368a5088049a5fcc *man/compareplot.Rd
 b2eeb44c325090ffac0c41d22ecffaf2 *man/daysofweek.Rd
